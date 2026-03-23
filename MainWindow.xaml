@@ -325,6 +325,54 @@
 
         <!-- ==================== Dialogs ==================== -->
 
+        <!-- Crop Dialog -->
+        <ContentDialog x:Name="CropDialog" Title="Crop Image"
+                       PrimaryButtonText="Crop" CloseButtonText="Cancel"
+                       DefaultButton="Primary">
+            <Grid Width="500" Height="500">
+                <Canvas x:Name="CropCanvas" Width="500" Height="500"
+                        Background="Black"
+                        PointerPressed="CropCanvas_PointerPressed"
+                        PointerMoved="CropCanvas_PointerMoved"
+                        PointerReleased="CropCanvas_PointerReleased">
+                    <!-- Source image -->
+                    <Image x:Name="CropImage" Stretch="Uniform"/>
+
+                    <!-- Dark overlays (outside crop area) -->
+                    <Rectangle x:Name="OverlayTop" Fill="#80000000"/>
+                    <Rectangle x:Name="OverlayBottom" Fill="#80000000"/>
+                    <Rectangle x:Name="OverlayLeft" Fill="#80000000"/>
+                    <Rectangle x:Name="OverlayRight" Fill="#80000000"/>
+
+                    <!-- Crop selection border -->
+                    <Rectangle x:Name="CropRect" Stroke="White" StrokeThickness="2"
+                               Fill="Transparent" StrokeDashArray="4 2"/>
+
+                    <!-- Corner handles -->
+                    <Border x:Name="HandleTL" Width="16" Height="16" CornerRadius="8"
+                            Background="White" BorderBrush="Gray" BorderThickness="1"
+                            PointerPressed="Handle_PointerPressed"
+                            PointerMoved="Handle_PointerMoved"
+                            PointerReleased="Handle_PointerReleased"/>
+                    <Border x:Name="HandleTR" Width="16" Height="16" CornerRadius="8"
+                            Background="White" BorderBrush="Gray" BorderThickness="1"
+                            PointerPressed="Handle_PointerPressed"
+                            PointerMoved="Handle_PointerMoved"
+                            PointerReleased="Handle_PointerReleased"/>
+                    <Border x:Name="HandleBL" Width="16" Height="16" CornerRadius="8"
+                            Background="White" BorderBrush="Gray" BorderThickness="1"
+                            PointerPressed="Handle_PointerPressed"
+                            PointerMoved="Handle_PointerMoved"
+                            PointerReleased="Handle_PointerReleased"/>
+                    <Border x:Name="HandleBR" Width="16" Height="16" CornerRadius="8"
+                            Background="White" BorderBrush="Gray" BorderThickness="1"
+                            PointerPressed="Handle_PointerPressed"
+                            PointerMoved="Handle_PointerMoved"
+                            PointerReleased="Handle_PointerReleased"/>
+                </Canvas>
+            </Grid>
+        </ContentDialog>
+
         <ContentDialog x:Name="AddProductDialog" Title="Add New Product"
                        PrimaryButtonText="Add" CloseButtonText="Cancel"
                        DefaultButton="Primary"
