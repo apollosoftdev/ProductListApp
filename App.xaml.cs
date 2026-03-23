@@ -8,12 +8,6 @@ public partial class App : Application
 
     public App()
     {
-        this.InitializeComponent();
-    }
-
-    private void InitializeComponent()
-    {
-        throw new NotImplementedException();
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)

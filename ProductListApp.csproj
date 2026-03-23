@@ -12,6 +12,7 @@
     <WindowsPackageType>None</WindowsPackageType>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultXamlItems>true</EnableDefaultXamlItems>
   </PropertyGroup>
 
   <ItemGroup>
