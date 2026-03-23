@@ -36,6 +36,14 @@ public class DatabaseHelper
             """;
         cmd.ExecuteNonQuery();
 
+        // Migration: add ImageData column if missing
+        try
+        {
+            cmd.CommandText = "ALTER TABLE Products ADD COLUMN ImageData BLOB DEFAULT NULL";
+            cmd.ExecuteNonQuery();
+        }
+        catch (SqliteException) { /* column already exists */ }
+
         cmd.CommandText = "SELECT COUNT(*) FROM Products";
         if ((long)cmd.ExecuteScalar()! == 0) SeedData(conn);
     }
@@ -86,7 +94,7 @@ public class DatabaseHelper
         conn.Open();
 
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT Id, Name, Category, Price, Stock, Description FROM Products ORDER BY Id";
+        cmd.CommandText = "SELECT Id, Name, Category, Price, Stock, Description, ImageData FROM Products ORDER BY Id";
 
         using var rdr = cmd.ExecuteReader();
         while (rdr.Read())
@@ -99,6 +107,7 @@ public class DatabaseHelper
                 Price       = (decimal)rdr.GetDouble(3),
                 Stock       = rdr.GetInt32(4),
                 Description = rdr.GetString(5),
+                ImageData   = rdr.IsDBNull(6) ? null : (byte[])rdr[6],
             });
         }
         return list;
@@ -110,14 +119,15 @@ public class DatabaseHelper
         conn.Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-            INSERT INTO Products (Name, Category, Price, Stock, Description)
-            VALUES ($name, $cat, $price, $stock, $desc)
+            INSERT INTO Products (Name, Category, Price, Stock, Description, ImageData)
+            VALUES ($name, $cat, $price, $stock, $desc, $imageData)
             """;
         cmd.Parameters.AddWithValue("$name",  p.Name);
         cmd.Parameters.AddWithValue("$cat",   p.Category);
         cmd.Parameters.AddWithValue("$price", (double)p.Price);
         cmd.Parameters.AddWithValue("$stock", p.Stock);
         cmd.Parameters.AddWithValue("$desc",  p.Description);
+        cmd.Parameters.AddWithValue("$imageData", (object?)p.ImageData ?? DBNull.Value);
         cmd.ExecuteNonQuery();
     }
 
@@ -128,7 +138,7 @@ public class DatabaseHelper
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
             UPDATE Products SET Name=$name, Category=$cat, Price=$price,
-                                Stock=$stock, Description=$desc
+                                Stock=$stock, Description=$desc, ImageData=$imageData
             WHERE Id=$id
             """;
         cmd.Parameters.AddWithValue("$id",    p.Id);
@@ -137,6 +147,7 @@ public class DatabaseHelper
         cmd.Parameters.AddWithValue("$price", (double)p.Price);
         cmd.Parameters.AddWithValue("$stock", p.Stock);
         cmd.Parameters.AddWithValue("$desc",  p.Description);
+        cmd.Parameters.AddWithValue("$imageData", (object?)p.ImageData ?? DBNull.Value);
         cmd.ExecuteNonQuery();
     }
 

@@ -4,10 +4,14 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using ProductListApp.Data;
 using ProductListApp.Models;
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage;
+using Windows.Storage.Pickers;
 using WinRT.Interop;
 
 namespace ProductListApp;
@@ -17,6 +21,7 @@ public sealed partial class MainWindow : Window
     private readonly DatabaseHelper _db = new();
     private readonly ObservableCollection<Product> _displayed = new();
     private List<Product> _allProducts = [];
+    private byte[]? _pendingImageBytes;
 
     public MainWindow()
     {
@@ -170,6 +175,9 @@ public sealed partial class MainWindow : Window
         DlgPrice.Value = 0;
         DlgStock.Value = 0;
         DlgDesc.Text = "";
+        _pendingImageBytes = null;
+        DlgImagePreview.Visibility = Visibility.Collapsed;
+        DlgImagePlaceholder.Visibility = Visibility.Visible;
 
         AddProductDialog.XamlRoot = this.Content.XamlRoot;
         await AddProductDialog.ShowAsync();
@@ -190,6 +198,7 @@ public sealed partial class MainWindow : Window
             Price       = (decimal)(double.IsNaN(DlgPrice.Value) ? 0 : DlgPrice.Value),
             Stock       = (int)(double.IsNaN(DlgStock.Value) ? 0 : DlgStock.Value),
             Description = DlgDesc.Text?.Trim() ?? "",
+            ImageData   = _pendingImageBytes,
         });
         LoadProducts();
     }
@@ -213,5 +222,61 @@ public sealed partial class MainWindow : Window
             _db.DeleteProduct(selected.Id);
             LoadProducts();
         }
+    }
+
+    // ============================
+    //  Image Picker / Drag-Drop
+    // ============================
+
+    private static readonly string[] _imageExtensions = [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp"];
+
+    private async void BrowseImage_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new FileOpenPicker();
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
+
+        foreach (var ext in _imageExtensions)
+            picker.FileTypeFilter.Add(ext);
+
+        var file = await picker.PickSingleFileAsync();
+        if (file is not null)
+            await SetPendingImage(file);
+    }
+
+    private void DlgImageDropZone_DragOver(object sender, Microsoft.UI.Xaml.DragEventArgs e)
+    {
+        e.AcceptedOperation = DataPackageOperation.Copy;
+        e.DragUIOverride.Caption = "Add image";
+    }
+
+    private async void DlgImageDropZone_Drop(object sender, Microsoft.UI.Xaml.DragEventArgs e)
+    {
+        if (!e.DataView.Contains(StandardDataFormats.StorageItems)) return;
+
+        var items = await e.DataView.GetStorageItemsAsync();
+        var file = items.OfType<StorageFile>()
+            .FirstOrDefault(f => _imageExtensions.Contains(Path.GetExtension(f.Name).ToLowerInvariant()));
+
+        if (file is not null)
+            await SetPendingImage(file);
+    }
+
+    private async Task SetPendingImage(StorageFile file)
+    {
+        using var stream = await file.OpenReadAsync();
+        var bytes = new byte[stream.Size];
+        using (var reader = new Windows.Storage.Streams.DataReader(stream))
+        {
+            await reader.LoadAsync((uint)stream.Size);
+            reader.ReadBytes(bytes);
+        }
+        _pendingImageBytes = bytes;
+
+        var bmp = new BitmapImage();
+        using var memStream = new MemoryStream(bytes);
+        bmp.SetSource(memStream.AsRandomAccessStream());
+        DlgImagePreview.Source = bmp;
+        DlgImagePreview.Visibility = Visibility.Visible;
+        DlgImagePlaceholder.Visibility = Visibility.Collapsed;
     }
 }

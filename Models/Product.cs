@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace ProductListApp.Models;
 
@@ -11,6 +12,7 @@ public class Product : INotifyPropertyChanged
     private decimal _price;
     private int _stock;
     private string _description = string.Empty;
+    private byte[]? _imageData;
 
     public int Id
     {
@@ -46,6 +48,26 @@ public class Product : INotifyPropertyChanged
     {
         get => _description;
         set { _description = value; OnPropertyChanged(); }
+    }
+
+    public byte[]? ImageData
+    {
+        get => _imageData;
+        set { _imageData = value; OnPropertyChanged(); OnPropertyChanged(nameof(ImageSource)); OnPropertyChanged(nameof(HasImage)); }
+    }
+
+    public bool HasImage => _imageData is { Length: > 0 };
+
+    public BitmapImage? ImageSource
+    {
+        get
+        {
+            if (_imageData is not { Length: > 0 }) return null;
+            var bmp = new BitmapImage();
+            using var stream = new System.IO.MemoryStream(_imageData);
+            bmp.SetSource(stream.AsRandomAccessStream());
+            return bmp;
+        }
     }
 
     // Computed display properties
