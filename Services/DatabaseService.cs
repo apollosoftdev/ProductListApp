@@ -465,65 +465,7 @@ public class DatabaseService
         SeedCategories(conn);
     }
 
-    // --- Test Data ---
 
-    public void SeedTestData(int count = 2000)
-    {
-        using var conn = Open();
-
-        // Fix existing records: negative amount should be PaymentType=1
-        Execute(conn, "UPDATE Records SET PaymentType = 1 WHERE Amount < 0 AND PaymentType = 0");
-        Execute(conn, "UPDATE Records SET PaymentType = 0 WHERE Amount > 0 AND PaymentType = 1");
-
-        // Check if already seeded
-        using var chk = conn.CreateCommand();
-        chk.CommandText = "SELECT COUNT(*) FROM Records";
-        if (Convert.ToInt32(chk.ExecuteScalar()) >= count) return;
-
-        var categories = new[] { "Salary", "Food", "Transport", "Shopping", "Bills", "Entertainment", "Health", "Education", "Other" };
-        var titles = new[]
-        {
-            "Monthly Salary", "Freelance Payment", "Grocery Store", "Restaurant Dinner",
-            "Bus Fare", "Taxi Ride", "Online Shopping", "Electronics Store",
-            "Electricity Bill", "Water Bill", "Internet Bill", "Phone Bill",
-            "Movie Tickets", "Concert", "Gym Membership", "Doctor Visit",
-            "Pharmacy", "Online Course", "Book Purchase", "Coffee Shop",
-            "Gas Station", "Parking Fee", "Clothing Store", "Gift Purchase",
-            "Insurance Premium", "Rent Payment", "Subscription Service", "Donation",
-            "Bonus", "Investment Return", "Refund", "Side Project Income",
-        };
-
-        var rng = new Random(42);
-        using var txn = conn.BeginTransaction();
-        var now = DateTime.Now;
-
-        for (int i = 0; i < count; i++)
-        {
-            var isIncome = rng.Next(100) < 25; // 25% income
-            var cat = categories[rng.Next(categories.Length)];
-            var title = titles[rng.Next(titles.Length)];
-            var amount = isIncome
-                ? Math.Round((decimal)(rng.NextDouble() * 5000 + 500), 2)
-                : -Math.Round((decimal)(rng.NextDouble() * 200 + 5), 2);
-            var date = now.AddDays(-rng.Next(365 * 2)).ToString("yyyy-MM-dd");
-            var ts = now.ToString("o");
-
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = """
-                INSERT INTO Records (Title, Category, Description, Amount, PaymentType, Date, CreatedAt, UpdatedAt)
-                VALUES ($title, $cat, $desc, $amount, $balanceType, $date, $ts, $ts)
-                """;
-            cmd.Parameters.AddWithValue("$title", title);
-            cmd.Parameters.AddWithValue("$cat", cat);
-            cmd.Parameters.AddWithValue("$desc", $"Test record #{i + 1}");
-            cmd.Parameters.AddWithValue("$amount", (double)amount);
-            cmd.Parameters.AddWithValue("$balanceType", isIncome ? 0 : 1);
-            cmd.Parameters.AddWithValue("$date", date);
-            cmd.Parameters.AddWithValue("$ts", ts);
-            cmd.ExecuteNonQuery();
-        }
-        txn.Commit();
-    }
 
     // --- Helpers ---
 

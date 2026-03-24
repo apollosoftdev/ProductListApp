@@ -26,9 +26,6 @@ public partial class App : Application
         Localization = new LocalizationService(Database);
         Localization.Initialize(Settings.Get("language", "en"));
 
-        // TODO: Remove after testing pagination
-        Database.SeedTestData(2000);
-
         _window = new MainWindow();
         _window.Activate();
     }
