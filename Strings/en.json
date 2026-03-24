@@ -3,7 +3,7 @@
 
   "activation.title": "License Activation",
   "activation.subtitle": "Enter your license key to activate LedgerDesk",
-  "activation.mac_label": "Device ID (MAC Address)",
+  "activation.mac_label": "Serial Number",
   "activation.key_header": "License Key",
   "activation.key_placeholder": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
   "activation.button": "Activate",
@@ -109,7 +109,7 @@
   "settings.text_value": "Value",
   "settings.text_reset": "Reset to Default",
   "settings.license": "License Info",
-  "settings.license_mac": "Device ID (MAC Address)",
+  "settings.license_mac": "Serial Number",
   "settings.license_key": "License Key",
   "settings.license_deactivate": "Deactivate License",
   "settings.deactivate_title": "Deactivate License",

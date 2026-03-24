@@ -9,7 +9,7 @@ namespace LedgerDesk.KeyGen;
 
 public sealed partial class MainWindow : Window
 {
-    // Must match LicenseService.Salt in the main app
+    // Must match LicenseService salts in the main app
     private const string Salt = "LedgerDesk-2026-License-Salt";
 
     public MainWindow()
@@ -25,24 +25,24 @@ public sealed partial class MainWindow : Window
 
     private void Generate_Click(object sender, RoutedEventArgs e)
     {
-        var mac = MacInput.Text?.Trim() ?? "";
+        var sn = SnInput.Text?.Trim() ?? "";
 
-        if (string.IsNullOrEmpty(mac))
+        if (string.IsNullOrEmpty(sn))
         {
-            ShowError("Please enter a MAC address.");
+            ShowError("Please enter a serial number.");
             return;
         }
 
-        // Clean MAC address
-        mac = mac.ToUpperInvariant().Replace("-", "").Replace(":", "").Replace(" ", "");
+        // Clean SN: remove dashes/spaces, validate hex
+        var clean = sn.ToUpperInvariant().Replace("-", "").Replace(" ", "");
 
-        if (mac.Length != 12 || !mac.All(c => "0123456789ABCDEF".Contains(c)))
+        if (clean.Length != 16 || !clean.All(c => "0123456789ABCDEF".Contains(c)))
         {
-            ShowError("Invalid MAC address. Expected 12 hex characters (e.g. AABBCCDDEEFF).");
+            ShowError("Invalid serial number. Expected format: XXXX-XXXX-XXXX-XXXX (16 hex characters).");
             return;
         }
 
-        var key = GenerateKey(mac);
+        var key = GenerateKey(clean);
         ResultKey.Text = key;
         ResultPanel.Visibility = Visibility.Visible;
         ErrorText.Visibility = Visibility.Collapsed;
@@ -62,12 +62,12 @@ public sealed partial class MainWindow : Window
         ResultPanel.Visibility = Visibility.Collapsed;
     }
 
-    private static string GenerateKey(string macAddress)
+    private static string GenerateKey(string serialNumber)
     {
         var keyBytes = Encoding.UTF8.GetBytes(Salt);
-        var macBytes = Encoding.UTF8.GetBytes(macAddress);
+        var snBytes = Encoding.UTF8.GetBytes(serialNumber);
 
-        var hmac = HMACSHA256.HashData(keyBytes, macBytes);
+        var hmac = HMACSHA256.HashData(keyBytes, snBytes);
 
         var sb = new StringBuilder();
         for (int i = 0; i < 25; i++)

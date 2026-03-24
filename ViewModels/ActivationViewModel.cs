@@ -6,15 +6,15 @@ public class ActivationViewModel : BaseViewModel
 {
     private readonly LicenseService _licenseService;
 
-    private string _macAddress = string.Empty;
+    private string _serialNumber = string.Empty;
     private string _licenseKey = string.Empty;
     private string _errorMessage = string.Empty;
     private bool _hasError;
 
-    public string MacAddress
+    public string SerialNumber
     {
-        get => _macAddress;
-        set => SetProperty(ref _macAddress, value);
+        get => _serialNumber;
+        set => SetProperty(ref _serialNumber, value);
     }
 
     public string LicenseKey
@@ -42,7 +42,7 @@ public class ActivationViewModel : BaseViewModel
     public ActivationViewModel(LicenseService licenseService)
     {
         _licenseService = licenseService;
-        MacAddress = _licenseService.GetMacAddress();
+        SerialNumber = _licenseService.GetSerialNumber();
     }
 
     public bool TryActivate()

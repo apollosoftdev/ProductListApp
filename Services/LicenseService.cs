@@ -10,13 +10,14 @@ public class LicenseService
 
     // Shared secret salt — must match KeyGen utility
     internal const string Salt = "LedgerDesk-2026-License-Salt";
+    internal const string SnSalt = "LedgerDesk-2026-SN-Salt";
 
     public LicenseService(DatabaseService db)
     {
         _db = db;
     }
 
-    public string GetMacAddress()
+    private static string GetRawMacAddress()
     {
         var nic = NetworkInterface.GetAllNetworkInterfaces()
             .Where(n => n.OperationalStatus == OperationalStatus.Up)
@@ -27,7 +28,6 @@ public class LicenseService
 
         if (nic is null)
         {
-            // Fallback: any non-loopback adapter
             nic = NetworkInterface.GetAllNetworkInterfaces()
                 .FirstOrDefault(n => n.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
                                      n.GetPhysicalAddress().GetAddressBytes().Length > 0);
@@ -39,15 +39,46 @@ public class LicenseService
         return BitConverter.ToString(bytes).Replace("-", "").ToUpperInvariant();
     }
 
-    public static string GenerateKey(string macAddress)
+    /// <summary>
+    /// Generates a 4x4 serial number from the MAC address (e.g. A1B2-C3D4-E5F6-7890).
+    /// This is the device identifier shown to the user.
+    /// </summary>
+    public static string GenerateSerialNumber(string macAddress)
     {
         var mac = macAddress.ToUpperInvariant().Replace("-", "").Replace(":", "");
-        var keyBytes = Encoding.UTF8.GetBytes(Salt);
+        var keyBytes = Encoding.UTF8.GetBytes(SnSalt);
         var macBytes = Encoding.UTF8.GetBytes(mac);
 
-        var hmac = HMACSHA256.HashData(keyBytes, macBytes);
+        var hash = HMACSHA256.HashData(keyBytes, macBytes);
 
-        // Convert hash bytes to 25 digits (5 groups of 5)
+        // Take 8 bytes → 16 hex chars → 4 groups of 4
+        var sb = new StringBuilder();
+        for (int i = 0; i < 8; i++)
+        {
+            sb.Append(hash[i].ToString("X2"));
+            if (i % 2 == 1 && i < 7)
+                sb.Append('-');
+        }
+
+        return sb.ToString(); // e.g. A1B2-C3D4-E5F6-7890
+    }
+
+    public string GetSerialNumber()
+    {
+        return GenerateSerialNumber(GetRawMacAddress());
+    }
+
+    /// <summary>
+    /// Generates a license key from a serial number. Format: 5 groups of 5 digits.
+    /// </summary>
+    public static string GenerateKey(string serialNumber)
+    {
+        var sn = serialNumber.ToUpperInvariant().Replace("-", "");
+        var keyBytes = Encoding.UTF8.GetBytes(Salt);
+        var snBytes = Encoding.UTF8.GetBytes(sn);
+
+        var hmac = HMACSHA256.HashData(keyBytes, snBytes);
+
         var sb = new StringBuilder();
         for (int i = 0; i < 25; i++)
         {
@@ -61,8 +92,8 @@ public class LicenseService
 
     public bool ValidateKey(string inputKey)
     {
-        var mac = GetMacAddress();
-        var expected = GenerateKey(mac);
+        var sn = GetSerialNumber();
+        var expected = GenerateKey(sn);
         return string.Equals(inputKey.Trim(), expected, StringComparison.Ordinal);
     }
 
@@ -71,8 +102,8 @@ public class LicenseService
         var storedKey = _db.GetSetting("license_key");
         if (string.IsNullOrEmpty(storedKey)) return false;
 
-        var mac = GetMacAddress();
-        var expected = GenerateKey(mac);
+        var sn = GetSerialNumber();
+        var expected = GenerateKey(sn);
         return string.Equals(storedKey, expected, StringComparison.Ordinal);
     }
 

@@ -95,7 +95,7 @@ public sealed partial class MainWindow : Window
         var l = App.Localization;
         if (!App.License.IsActivated())
         {
-            ActivationMacAddress.Text = _activationViewModel.MacAddress;
+            ActivationMacAddress.Text = _activationViewModel.SerialNumber;
             ShowPanel("Activation");
         }
         else if (!App.Auth.IsPasswordSet())
@@ -299,7 +299,7 @@ public sealed partial class MainWindow : Window
 
         // Populate UI
         SettingsCategoryList.ItemsSource = _settingsViewModel.Categories;
-        SettingsMacAddress.Text = _settingsViewModel.MacAddress;
+        SettingsMacAddress.Text = _settingsViewModel.SerialNumber;
         SettingsLicenseKey.Text = _settingsViewModel.LicenseKey;
         SettingsPasswordMessage.Visibility = Visibility.Collapsed;
 

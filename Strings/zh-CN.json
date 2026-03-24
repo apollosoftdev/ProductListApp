@@ -3,7 +3,7 @@
 
   "activation.title": "许可证激活",
   "activation.subtitle": "请输入许可证密钥以激活 LedgerDesk",
-  "activation.mac_label": "设备ID（MAC地址）",
+  "activation.mac_label": "序列号",
   "activation.key_header": "许可证密钥",
   "activation.key_placeholder": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
   "activation.button": "激活",
@@ -109,7 +109,7 @@
   "settings.text_value": "值",
   "settings.text_reset": "恢复默认",
   "settings.license": "许可证信息",
-  "settings.license_mac": "设备ID（MAC地址）",
+  "settings.license_mac": "序列号",
   "settings.license_key": "许可证密钥",
   "settings.license_deactivate": "停用许可证",
   "settings.deactivate_title": "停用许可证",

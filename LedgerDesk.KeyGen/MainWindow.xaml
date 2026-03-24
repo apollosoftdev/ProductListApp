@@ -15,15 +15,15 @@
                           HorizontalAlignment="Center"/>
                 <TextBlock Text="LedgerDesk Key Generator" FontSize="22" FontWeight="SemiBold"
                            HorizontalAlignment="Center"/>
-                <TextBlock Text="Generate license keys from device MAC addresses"
+                <TextBlock Text="Generate license keys from device serial numbers"
                            FontSize="13"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                            HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <!-- MAC Address Input -->
-            <TextBox x:Name="MacInput" Header="MAC Address"
-                     PlaceholderText="e.g. AA:BB:CC:DD:EE:FF or AABBCCDDEEFF"
+            <!-- Serial Number Input -->
+            <TextBox x:Name="SnInput" Header="Serial Number"
+                     PlaceholderText="e.g. A1B2-C3D4-E5F6-7890"
                      FontFamily="Cascadia Code,Consolas,Courier New"
                      HorizontalAlignment="Stretch"/>
 

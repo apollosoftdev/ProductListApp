@@ -44,10 +44,10 @@ public class SettingsViewModel : BaseViewModel
     }
 
     // --- License ---
-    private string _macAddress = string.Empty;
+    private string _serialNumber = string.Empty;
     private string _licenseKey = string.Empty;
 
-    public string MacAddress { get => _macAddress; set => SetProperty(ref _macAddress, value); }
+    public string SerialNumber { get => _serialNumber; set => SetProperty(ref _serialNumber, value); }
     public string LicenseKey { get => _licenseKey; set => SetProperty(ref _licenseKey, value); }
 
     public SettingsViewModel(DatabaseService db, AuthService auth, LicenseService license, SettingsService settings)
@@ -71,7 +71,7 @@ public class SettingsViewModel : BaseViewModel
         OnPropertyChanged(nameof(SelectedTheme));
 
         // License
-        MacAddress = _license.GetMacAddress();
+        SerialNumber = _license.GetSerialNumber();
         LicenseKey = _db.GetSetting("license_key") ?? "";
 
         // Reset password fields
