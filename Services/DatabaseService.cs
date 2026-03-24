@@ -106,6 +106,32 @@ public class DatabaseService
         return QueryRecords(conn, "SELECT Id, Title, Category, Description, Amount, BalanceType, Date, CreatedAt, UpdatedAt FROM Records ORDER BY Date DESC, Id DESC");
     }
 
+    public List<Record> GetRecordsPaged(int page, int pageSize)
+    {
+        using var conn = Open();
+        var offset = page * pageSize;
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"SELECT Id, Title, Category, Description, Amount, BalanceType, Date, CreatedAt, UpdatedAt FROM Records ORDER BY Date DESC, Id DESC LIMIT {pageSize} OFFSET {offset}";
+
+        var list = new List<Record>();
+        using var rdr = cmd.ExecuteReader();
+        while (rdr.Read())
+        {
+            var record = ReadRecord(rdr);
+            LoadFirstImage(conn, record);
+            list.Add(record);
+        }
+        return list;
+    }
+
+    public int GetRecordCount()
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM Records";
+        return Convert.ToInt32(cmd.ExecuteScalar());
+    }
+
     public Record? GetRecordById(int id)
     {
         using var conn = Open();
@@ -117,57 +143,14 @@ public class DatabaseService
         return rdr.Read() ? ReadRecord(rdr) : null;
     }
 
-    public List<Record> SearchRecords(RecordFilter filter)
+    public List<Record> SearchRecords(RecordFilter filter, int page = -1, int pageSize = 50)
     {
         using var conn = Open();
+        var (where, parameters) = BuildFilterClause(filter);
 
-        var conditions = new List<string>();
-        var parameters = new List<SqliteParameter>();
-
-        if (!string.IsNullOrWhiteSpace(filter.TitleQuery))
-        {
-            conditions.Add("Title LIKE $title");
-            parameters.Add(new SqliteParameter("$title", $"%{filter.TitleQuery}%"));
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.CategoryFilter))
-        {
-            conditions.Add("Category = $category");
-            parameters.Add(new SqliteParameter("$category", filter.CategoryFilter));
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.DescriptionQuery))
-        {
-            conditions.Add("Description LIKE $desc");
-            parameters.Add(new SqliteParameter("$desc", $"%{filter.DescriptionQuery}%"));
-        }
-
-        if (filter.AmountMin.HasValue)
-        {
-            conditions.Add("Amount >= $amountMin");
-            parameters.Add(new SqliteParameter("$amountMin", (double)filter.AmountMin.Value));
-        }
-
-        if (filter.AmountMax.HasValue)
-        {
-            conditions.Add("Amount <= $amountMax");
-            parameters.Add(new SqliteParameter("$amountMax", (double)filter.AmountMax.Value));
-        }
-
-        if (filter.DateStart.HasValue)
-        {
-            conditions.Add("Date >= $dateStart");
-            parameters.Add(new SqliteParameter("$dateStart", filter.DateStart.Value.ToString("yyyy-MM-dd")));
-        }
-
-        if (filter.DateEnd.HasValue)
-        {
-            conditions.Add("Date <= $dateEnd");
-            parameters.Add(new SqliteParameter("$dateEnd", filter.DateEnd.Value.ToString("yyyy-MM-dd")));
-        }
-
-        var where = conditions.Count > 0 ? " WHERE " + string.Join(" AND ", conditions) : "";
         var sql = $"SELECT Id, Title, Category, Description, Amount, BalanceType, Date, CreatedAt, UpdatedAt FROM Records{where} ORDER BY Date DESC, Id DESC";
+        if (page >= 0)
+            sql += $" LIMIT {pageSize} OFFSET {page * pageSize}";
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
@@ -183,6 +166,64 @@ public class DatabaseService
             list.Add(record);
         }
         return list;
+    }
+
+    public int SearchRecordCount(RecordFilter filter)
+    {
+        using var conn = Open();
+        var (where, parameters) = BuildFilterClause(filter);
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"SELECT COUNT(*) FROM Records{where}";
+        foreach (var p in parameters)
+            cmd.Parameters.Add(p);
+
+        return Convert.ToInt32(cmd.ExecuteScalar());
+    }
+
+    private static (string where, List<SqliteParameter> parameters) BuildFilterClause(RecordFilter filter)
+    {
+        var conditions = new List<string>();
+        var parameters = new List<SqliteParameter>();
+
+        if (!string.IsNullOrWhiteSpace(filter.TitleQuery))
+        {
+            conditions.Add("Title LIKE $title");
+            parameters.Add(new SqliteParameter("$title", $"%{filter.TitleQuery}%"));
+        }
+        if (!string.IsNullOrWhiteSpace(filter.CategoryFilter))
+        {
+            conditions.Add("Category = $category");
+            parameters.Add(new SqliteParameter("$category", filter.CategoryFilter));
+        }
+        if (!string.IsNullOrWhiteSpace(filter.DescriptionQuery))
+        {
+            conditions.Add("Description LIKE $desc");
+            parameters.Add(new SqliteParameter("$desc", $"%{filter.DescriptionQuery}%"));
+        }
+        if (filter.AmountMin.HasValue)
+        {
+            conditions.Add("Amount >= $amountMin");
+            parameters.Add(new SqliteParameter("$amountMin", (double)filter.AmountMin.Value));
+        }
+        if (filter.AmountMax.HasValue)
+        {
+            conditions.Add("Amount <= $amountMax");
+            parameters.Add(new SqliteParameter("$amountMax", (double)filter.AmountMax.Value));
+        }
+        if (filter.DateStart.HasValue)
+        {
+            conditions.Add("Date >= $dateStart");
+            parameters.Add(new SqliteParameter("$dateStart", filter.DateStart.Value.ToString("yyyy-MM-dd")));
+        }
+        if (filter.DateEnd.HasValue)
+        {
+            conditions.Add("Date <= $dateEnd");
+            parameters.Add(new SqliteParameter("$dateEnd", filter.DateEnd.Value.ToString("yyyy-MM-dd")));
+        }
+
+        var where = conditions.Count > 0 ? " WHERE " + string.Join(" AND ", conditions) : "";
+        return (where, parameters);
     }
 
     public int AddRecord(Record record)

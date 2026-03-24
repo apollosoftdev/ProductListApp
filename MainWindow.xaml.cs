@@ -459,19 +459,19 @@ public sealed partial class MainWindow : Window
     {
         var filter = _filterViewModel.BuildFilter();
         if (filter.IsEmpty)
-        {
             ViewModel.LoadRecords();
-        }
         else
-        {
-            var results = App.Database.SearchRecords(filter);
-            ViewModel.Records.Clear();
-            foreach (var r in results)
-                ViewModel.Records.Add(r);
-            ViewModel.HasRecords = ViewModel.Records.Count > 0;
-            ViewModel.StatusText = $"Showing {ViewModel.Records.Count} records (filtered)";
-        }
+            ViewModel.LoadFiltered(filter);
     }
+
+    // ============================
+    //  Pagination
+    // ============================
+
+    private void FirstPage_Click(object sender, RoutedEventArgs e) => ViewModel.FirstPageCommand.Execute(null);
+    private void PrevPage_Click(object sender, RoutedEventArgs e) => ViewModel.PrevPageCommand.Execute(null);
+    private void NextPage_Click(object sender, RoutedEventArgs e) => ViewModel.NextPageCommand.Execute(null);
+    private void LastPage_Click(object sender, RoutedEventArgs e) => ViewModel.LastPageCommand.Execute(null);
 
     // ============================
     //  Record List Click → Detail
