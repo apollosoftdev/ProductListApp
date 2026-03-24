@@ -202,7 +202,8 @@
                         <ListView x:Name="RecordListView" Grid.Row="1"
                                   ItemsSource="{Binding Records}"
                                   SelectionMode="Single"
-                                  SelectionChanged="RecordListView_SelectionChanged"
+                                  IsItemClickEnabled="True"
+                                  ItemClick="RecordListView_ItemClick"
                                   Padding="0" Margin="0">
                             <ListView.ItemTemplate>
                                 <DataTemplate>

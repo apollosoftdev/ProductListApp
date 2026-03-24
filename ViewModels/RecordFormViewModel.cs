@@ -89,7 +89,10 @@ public class RecordFormViewModel : BaseViewModel
         Title = record.Title;
         Category = record.Category;
         Description = record.Description;
-        Amount = (double)record.Amount;
+        // Show positive value in form for Expense (we auto-negate on save)
+        Amount = record.Category.Equals("Expense", StringComparison.OrdinalIgnoreCase)
+            ? (double)Math.Abs(record.Amount)
+            : (double)record.Amount;
         Date = new DateTimeOffset(record.Date);
 
         PendingImages.Clear();
@@ -121,12 +124,19 @@ public class RecordFormViewModel : BaseViewModel
 
     public int Save()
     {
+        var amount = (decimal)(double.IsNaN(Amount) ? 0 : Amount);
+        var category = Category.Trim();
+
+        // Auto-negate for Expense category: user enters positive, stored as negative
+        if (category.Equals("Expense", StringComparison.OrdinalIgnoreCase) && amount > 0)
+            amount = -amount;
+
         var record = new Record
         {
             Title = Title.Trim(),
-            Category = Category.Trim(),
+            Category = category,
             Description = Description?.Trim() ?? string.Empty,
-            Amount = (decimal)(double.IsNaN(Amount) ? 0 : Amount),
+            Amount = amount,
             Date = Date.DateTime,
         };
 

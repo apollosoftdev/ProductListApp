@@ -211,12 +211,12 @@ public sealed partial class MainWindow : Window
     //  Record List Selection → Detail in side panel
     // ============================
 
-    private void RecordListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void RecordListView_ItemClick(object sender, ItemClickEventArgs e)
     {
-        if (RecordListView.SelectedItem is Record selected)
+        if (e.ClickedItem is Record clicked)
         {
-            ViewModel.SelectedRecord = selected;
-            OpenSidePanelDetail(selected.Id);
+            ViewModel.SelectedRecord = clicked;
+            OpenSidePanelDetail(clicked.Id);
         }
     }
 
