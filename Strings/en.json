@@ -38,6 +38,7 @@
   "record.settings": "Settings",
 
   "table.date": "DATE",
+  "table.payment_type": "PAYMENT TYPE",
   "table.title": "TITLE",
   "table.category": "CATEGORY",
   "table.amount": "AMOUNT",

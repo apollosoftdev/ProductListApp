@@ -38,6 +38,7 @@
   "record.settings": "设置",
 
   "table.date": "日期",
+  "table.payment_type": "收支类型",
   "table.title": "标题",
   "table.category": "类别",
   "table.amount": "金额",

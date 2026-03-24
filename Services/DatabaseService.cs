@@ -471,6 +471,10 @@ public class DatabaseService
     {
         using var conn = Open();
 
+        // Fix existing records: negative amount should be PaymentType=1
+        Execute(conn, "UPDATE Records SET PaymentType = 1 WHERE Amount < 0 AND PaymentType = 0");
+        Execute(conn, "UPDATE Records SET PaymentType = 0 WHERE Amount > 0 AND PaymentType = 1");
+
         // Check if already seeded
         using var chk = conn.CreateCommand();
         chk.CommandText = "SELECT COUNT(*) FROM Records";
