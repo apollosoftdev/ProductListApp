@@ -483,10 +483,7 @@ public sealed partial class MainWindow : Window
     private void ApplyCurrentFilter()
     {
         var filter = _filterViewModel.BuildFilter();
-        if (filter.IsEmpty)
-            ViewModel.LoadRecords();
-        else
-            ViewModel.LoadFiltered(filter);
+        ViewModel.LoadFiltered(filter);
     }
 
     // ============================
@@ -502,16 +499,16 @@ public sealed partial class MainWindow : Window
     //  Column Header Sorting
     // ============================
 
-    private void ColumnHeader_Click(object sender, RoutedEventArgs e)
+    private void ColumnHeader_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
     {
-        if (sender is not Button btn || btn.Tag is not string column) return;
+        if (sender is not FrameworkElement el || el.Tag is not string column) return;
 
         if (_filterViewModel.SortBy == column)
             _filterViewModel.SortDescending = !_filterViewModel.SortDescending;
         else
         {
             _filterViewModel.SortBy = column;
-            _filterViewModel.SortDescending = column == "date"; // date defaults desc, others asc
+            _filterViewModel.SortDescending = column == "date";
         }
 
         UpdateSortIndicators();

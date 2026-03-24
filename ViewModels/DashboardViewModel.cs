@@ -142,6 +142,8 @@ public class DashboardViewModel : BaseViewModel
         _currentFilter = filter;
         _currentPage = 0;
         LoadPage();
+        UpdateStatsFromAll();
+        LoadCategories();
     }
 
     private void GoToPage(int page)
@@ -153,18 +155,12 @@ public class DashboardViewModel : BaseViewModel
 
     private void LoadPage()
     {
-        List<Record> records;
+        // Always use SearchRecords to respect sort settings
+        var filter = _currentFilter ?? new RecordFilter();
+        filter.SortBy ??= "date";
 
-        if (_currentFilter is null || _currentFilter.IsEmpty)
-        {
-            _totalFilteredCount = _db.GetRecordCount();
-            records = _db.GetRecordsPaged(_currentPage, PageSize);
-        }
-        else
-        {
-            _totalFilteredCount = _db.SearchRecordCount(_currentFilter);
-            records = _db.SearchRecords(_currentFilter, _currentPage, PageSize);
-        }
+        _totalFilteredCount = _db.SearchRecordCount(filter);
+        var records = _db.SearchRecords(filter, _currentPage, PageSize);
 
         TotalPages = Math.Max(1, (int)Math.Ceiling((double)_totalFilteredCount / PageSize));
         CurrentPage = _currentPage;

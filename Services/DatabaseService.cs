@@ -232,7 +232,7 @@ public class DatabaseService
         var sortCol = filter.SortBy switch
         {
             "title" => "Title",
-            "amount" => "ABS(Amount)",
+            "amount" => "Amount",
             "category" => "Category",
             "type" => "PaymentType",
             _ => "Date",
