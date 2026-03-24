@@ -1,11 +1,9 @@
-using System.Numerics;
-using Microsoft.UI.Composition;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using LedgerDesk.Models;
 using LedgerDesk.Services;
 using LedgerDesk.ViewModels;
@@ -904,6 +902,7 @@ public sealed partial class MainWindow : Window
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
         {
             _settingsViewModel.Deactivate();
+            ForceCloseSheet(SettingsPanel);
             DetermineStartupScreen();
         }
     }
@@ -1060,96 +1059,75 @@ public sealed partial class MainWindow : Window
     //  Sheet Animations
     // ============================
 
-    private const float SlideOffset = 100f;
-    private static readonly TimeSpan AnimDuration = TimeSpan.FromMilliseconds(250);
-
     private void ShowSheet(Grid panel)
     {
         panel.Visibility = Visibility.Visible;
 
-        // Find backdrop and sheet children
-        var backdrop = panel.Children[0] as FrameworkElement;
-        var sheet = panel.Children[1] as FrameworkElement;
-        if (backdrop is null || sheet is null) return;
-
-        var compositor = ElementCompositionPreview.GetElementVisual(sheet).Compositor;
-
-        // Backdrop fade in
-        var backdropVisual = ElementCompositionPreview.GetElementVisual(backdrop);
-        backdropVisual.Opacity = 0f;
-        var fadeIn = compositor.CreateScalarKeyFrameAnimation();
-        fadeIn.InsertKeyFrame(1f, 1f, compositor.CreateCubicBezierEasingFunction(new Vector2(0.1f, 0.9f), new Vector2(0.2f, 1f)));
-        fadeIn.Duration = AnimDuration;
-        backdropVisual.StartAnimation("Opacity", fadeIn);
-
-        // Sheet slide in from right + fade
-        var sheetVisual = ElementCompositionPreview.GetElementVisual(sheet);
-        sheetVisual.Opacity = 0f;
-
-        var slideIn = compositor.CreateVector3KeyFrameAnimation();
-        slideIn.InsertKeyFrame(0f, new Vector3(SlideOffset, 0, 0));
-        slideIn.InsertKeyFrame(1f, Vector3.Zero, compositor.CreateCubicBezierEasingFunction(new Vector2(0.1f, 0.9f), new Vector2(0.2f, 1f)));
-        slideIn.Duration = AnimDuration;
-
-        var sheetFadeIn = compositor.CreateScalarKeyFrameAnimation();
-        sheetFadeIn.InsertKeyFrame(1f, 1f);
-        sheetFadeIn.Duration = AnimDuration;
-
-        sheetVisual.StartAnimation("Offset", slideIn);
-        sheetVisual.StartAnimation("Opacity", sheetFadeIn);
+        if (ReferenceEquals(panel, SidePanel))
+            SidePanelShowAnim.Begin();
+        else if (ReferenceEquals(panel, SettingsPanel))
+            SettingsShowAnim.Begin();
     }
 
     private void HideSheet(Grid panel, Action? onComplete = null)
     {
-        var backdrop = panel.Children[0] as FrameworkElement;
-        var sheet = panel.Children[1] as FrameworkElement;
-        if (backdrop is null || sheet is null)
+        Storyboard hideAnim;
+        if (ReferenceEquals(panel, SidePanel))
+            hideAnim = SidePanelHideAnim;
+        else if (ReferenceEquals(panel, SettingsPanel))
+            hideAnim = SettingsHideAnim;
+        else
         {
             panel.Visibility = Visibility.Collapsed;
             onComplete?.Invoke();
             return;
         }
 
-        var compositor = ElementCompositionPreview.GetElementVisual(sheet).Compositor;
+        hideAnim.Completed -= OnHideAnimCompleted;
 
-        // Backdrop fade out
-        var backdropVisual = ElementCompositionPreview.GetElementVisual(backdrop);
-        var fadeOut = compositor.CreateScalarKeyFrameAnimation();
-        fadeOut.InsertKeyFrame(1f, 0f);
-        fadeOut.Duration = AnimDuration;
-        backdropVisual.StartAnimation("Opacity", fadeOut);
+        // Store callback and panel for the completed handler
+        _hideAnimPanel = panel;
+        _hideAnimCallback = onComplete;
 
-        // Sheet slide out to right + fade
-        var sheetVisual = ElementCompositionPreview.GetElementVisual(sheet);
+        hideAnim.Completed += OnHideAnimCompleted;
+        hideAnim.Begin();
+    }
 
-        var slideOut = compositor.CreateVector3KeyFrameAnimation();
-        slideOut.InsertKeyFrame(1f, new Vector3(SlideOffset, 0, 0), compositor.CreateCubicBezierEasingFunction(new Vector2(0.8f, 0f), new Vector2(0.9f, 0.1f)));
-        slideOut.Duration = AnimDuration;
+    private Grid? _hideAnimPanel;
+    private Action? _hideAnimCallback;
 
-        var sheetFadeOut = compositor.CreateScalarKeyFrameAnimation();
-        sheetFadeOut.InsertKeyFrame(1f, 0f);
-        sheetFadeOut.Duration = AnimDuration;
+    private void OnHideAnimCompleted(object? sender, object e)
+    {
+        if (sender is Storyboard sb)
+            sb.Completed -= OnHideAnimCompleted;
 
-        sheetVisual.StartAnimation("Offset", slideOut);
-        sheetVisual.StartAnimation("Opacity", sheetFadeOut);
-
-        // Collapse after animation completes
-        var batch = compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
-        batch.Completed += (_, _) =>
+        _hideAnimPanel?.DispatcherQueue.TryEnqueue(() =>
         {
-            panel.Visibility = Visibility.Collapsed;
-            // Reset transforms
-            sheetVisual.Offset = Vector3.Zero;
-            sheetVisual.Opacity = 1f;
-            backdropVisual.Opacity = 1f;
-            onComplete?.Invoke();
-        };
-        // Need to start at least one animation inside the batch scope for Completed to fire
-        var dummy = compositor.CreateScalarKeyFrameAnimation();
-        dummy.InsertKeyFrame(1f, 0f);
-        dummy.Duration = AnimDuration;
-        backdropVisual.StartAnimation("Opacity", dummy);
-        batch.End();
+            if (_hideAnimPanel is not null)
+                _hideAnimPanel.Visibility = Visibility.Collapsed;
+            _hideAnimCallback?.Invoke();
+            _hideAnimPanel = null;
+            _hideAnimCallback = null;
+        });
+    }
+
+    private void ForceCloseSheet(Grid panel)
+    {
+        if (ReferenceEquals(panel, SidePanel))
+        {
+            SidePanelShowAnim.Stop();
+            SidePanelHideAnim.Stop();
+            SidePanelBackdrop.Opacity = 0;
+            SidePanelTranslate.X = 460;
+        }
+        else if (ReferenceEquals(panel, SettingsPanel))
+        {
+            SettingsShowAnim.Stop();
+            SettingsHideAnim.Stop();
+            SettingsBackdropBorder.Opacity = 0;
+            SettingsTranslate.X = 500;
+        }
+        panel.Visibility = Visibility.Collapsed;
     }
 }
 

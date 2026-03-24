@@ -20,6 +20,58 @@
                 <Setter Property="BorderBrush" Value="Transparent"/>
                 <Setter Property="HorizontalAlignment" Value="Right"/>
             </Style>
+
+            <!-- Side Panel Animations -->
+            <Storyboard x:Name="SidePanelShowAnim">
+                <DoubleAnimation Storyboard.TargetName="SidePanelBackdrop"
+                                 Storyboard.TargetProperty="Opacity"
+                                 From="0" To="1" Duration="0:0:0.2"/>
+                <DoubleAnimation Storyboard.TargetName="SidePanelTranslate"
+                                 Storyboard.TargetProperty="X"
+                                 From="460" To="0" Duration="0:0:0.25">
+                    <DoubleAnimation.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+            </Storyboard>
+            <Storyboard x:Name="SidePanelHideAnim">
+                <DoubleAnimation Storyboard.TargetName="SidePanelBackdrop"
+                                 Storyboard.TargetProperty="Opacity"
+                                 To="0" Duration="0:0:0.2"/>
+                <DoubleAnimation Storyboard.TargetName="SidePanelTranslate"
+                                 Storyboard.TargetProperty="X"
+                                 To="460" Duration="0:0:0.2">
+                    <DoubleAnimation.EasingFunction>
+                        <CubicEase EasingMode="EaseIn"/>
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+            </Storyboard>
+
+            <!-- Settings Panel Animations -->
+            <Storyboard x:Name="SettingsShowAnim">
+                <DoubleAnimation Storyboard.TargetName="SettingsBackdropBorder"
+                                 Storyboard.TargetProperty="Opacity"
+                                 From="0" To="1" Duration="0:0:0.2"/>
+                <DoubleAnimation Storyboard.TargetName="SettingsTranslate"
+                                 Storyboard.TargetProperty="X"
+                                 From="500" To="0" Duration="0:0:0.25">
+                    <DoubleAnimation.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+            </Storyboard>
+            <Storyboard x:Name="SettingsHideAnim">
+                <DoubleAnimation Storyboard.TargetName="SettingsBackdropBorder"
+                                 Storyboard.TargetProperty="Opacity"
+                                 To="0" Duration="0:0:0.2"/>
+                <DoubleAnimation Storyboard.TargetName="SettingsTranslate"
+                                 Storyboard.TargetProperty="X"
+                                 To="500" Duration="0:0:0.2">
+                    <DoubleAnimation.EasingFunction>
+                        <CubicEase EasingMode="EaseIn"/>
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+            </Storyboard>
         </Grid.Resources>
 
         <Grid.RowDefinitions>
@@ -500,12 +552,16 @@
 
         <!-- ==================== Record Sheet Overlay (Detail / Add / Edit) ==================== -->
         <Grid x:Name="SidePanel" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed">
-            <Border x:Name="SidePanelBackdrop" Background="#80000000" PointerPressed="SidePanelBackdrop_Click"/>
+            <Border x:Name="SidePanelBackdrop" Background="#80000000" Opacity="0"
+                    PointerPressed="SidePanelBackdrop_Click"/>
 
             <Border x:Name="SidePanelSheet" HorizontalAlignment="Right" Width="460"
                     Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1,0,0,0">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="SidePanelTranslate" X="460"/>
+                </Border.RenderTransform>
                 <Grid Padding="24,56,24,24">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -766,13 +822,17 @@
         <!-- ==================== Settings Overlay Sheet ==================== -->
         <Grid x:Name="SettingsPanel" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed">
             <!-- Dimmed backdrop -->
-            <Border x:Name="SettingsBackdropBorder" Background="#80000000" PointerPressed="SettingsBackdrop_Click"/>
+            <Border x:Name="SettingsBackdropBorder" Background="#80000000" Opacity="0"
+                    PointerPressed="SettingsBackdrop_Click"/>
 
             <!-- Sheet -->
             <Border x:Name="SettingsSheet" HorizontalAlignment="Right" Width="500"
                     Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1,0,0,0">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="SettingsTranslate" X="500"/>
+                </Border.RenderTransform>
                 <Grid Padding="28,56,28,24">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
