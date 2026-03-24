@@ -18,6 +18,7 @@ public sealed partial class MainWindow : Window
     private readonly MainViewModel _mainViewModel;
     private readonly RecordFormViewModel _formViewModel;
     private readonly RecordDetailViewModel _detailViewModel;
+    private readonly FilterViewModel _filterViewModel;
 
     public MainWindow()
     {
@@ -25,6 +26,9 @@ public sealed partial class MainWindow : Window
         _mainViewModel = new MainViewModel();
         _formViewModel = new RecordFormViewModel(App.Database);
         _detailViewModel = new RecordDetailViewModel(App.Database);
+        _filterViewModel = new FilterViewModel();
+
+        _filterViewModel.FilterChanged += OnFilterChanged;
 
         this.InitializeComponent();
 
@@ -34,6 +38,7 @@ public sealed partial class MainWindow : Window
         SetupTitleBar();
         TrySetMicaBackdrop();
 
+        PopulateFilterCategories();
         ViewModel.LoadRecords();
     }
 
@@ -84,7 +89,6 @@ public sealed partial class MainWindow : Window
         var record = _detailViewModel.Record;
         if (record is null) return;
 
-        // Populate detail fields
         DetailTitle.Text = record.Title;
         DetailCategory.Text = record.Category;
         DetailDate.Text = record.DateDisplay;
@@ -106,7 +110,6 @@ public sealed partial class MainWindow : Window
             DetailDescription.Text = record.Description;
         }
 
-        // Images
         if (_detailViewModel.HasImages)
         {
             DetailImageGallery.Visibility = Visibility.Visible;
@@ -124,12 +127,10 @@ public sealed partial class MainWindow : Window
     {
         SidePanelHeader.Text = _formViewModel.HeaderText;
 
-        // Populate category ComboBox
         FormCategory.Items.Clear();
         foreach (var cat in ViewModel.Categories)
             FormCategory.Items.Add(cat);
 
-        // Bind form fields
         FormTitle.Text = _formViewModel.Title;
         FormCategory.Text = _formViewModel.Category;
         FormAmount.Value = _formViewModel.Amount;
@@ -165,7 +166,7 @@ public sealed partial class MainWindow : Window
 
     private void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.LoadRecords();
+        ApplyCurrentFilter();
     }
 
     private void NewRecordButton_Click(object sender, RoutedEventArgs e)
@@ -183,32 +184,91 @@ public sealed partial class MainWindow : Window
     }
 
     // ============================
-    //  Search (basic, Phase 4 expands)
+    //  Filtering
     // ============================
 
-    private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+    private void PopulateFilterCategories()
     {
-        if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput) return;
+        FilterCategory.Items.Clear();
+        FilterCategory.Items.Add("All Categories");
+        foreach (var cat in ViewModel.Categories)
+            FilterCategory.Items.Add(cat);
+        FilterCategory.SelectedIndex = 0;
+    }
 
-        var query = sender.Text?.Trim() ?? "";
-        if (string.IsNullOrEmpty(query))
+    private void FilterText_Changed(object sender, TextChangedEventArgs e)
+    {
+        if (sender == FilterTitle)
+            _filterViewModel.TitleQuery = FilterTitle.Text;
+        else if (sender == FilterDescription)
+            _filterViewModel.DescriptionQuery = FilterDescription.Text;
+    }
+
+    private void FilterCategory_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (FilterCategory.SelectedItem is string selected && selected != "All Categories")
+            _filterViewModel.SelectedCategory = selected;
+        else
+            _filterViewModel.SelectedCategory = null;
+    }
+
+    private void FilterAmount_Changed(NumberBox sender, NumberBoxValueChangedEventArgs args)
+    {
+        if (sender == FilterAmountMin)
+            _filterViewModel.AmountMin = args.NewValue;
+        else if (sender == FilterAmountMax)
+            _filterViewModel.AmountMax = args.NewValue;
+    }
+
+    private void FilterDate_Changed(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
+    {
+        if (sender == FilterDateStart)
+            _filterViewModel.DateStart = args.NewDate;
+        else if (sender == FilterDateEnd)
+            _filterViewModel.DateEnd = args.NewDate;
+    }
+
+    private void ClearFilters_Click(object sender, RoutedEventArgs e)
+    {
+        _filterViewModel.ClearFilters();
+
+        // Reset UI controls
+        FilterTitle.Text = "";
+        FilterDescription.Text = "";
+        FilterCategory.SelectedIndex = 0;
+        FilterAmountMin.Value = double.NaN;
+        FilterAmountMax.Value = double.NaN;
+        FilterDateStart.Date = null;
+        FilterDateEnd.Date = null;
+    }
+
+    private void OnFilterChanged()
+    {
+        ApplyCurrentFilter();
+        ClearFiltersButton.Visibility = _filterViewModel.HasActiveFilters
+            ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void ApplyCurrentFilter()
+    {
+        var filter = _filterViewModel.BuildFilter();
+        if (filter.IsEmpty)
         {
             ViewModel.LoadRecords();
         }
         else
         {
-            var filter = new RecordFilter { TitleQuery = query };
             var results = App.Database.SearchRecords(filter);
             ViewModel.Records.Clear();
             foreach (var r in results)
                 ViewModel.Records.Add(r);
             ViewModel.HasRecords = ViewModel.Records.Count > 0;
-            ViewModel.StatusText = $"Showing {ViewModel.Records.Count} records";
+            ViewModel.StatusText = $"Showing {ViewModel.Records.Count} records (filtered)";
         }
     }
 
     // ============================
-    //  Record List Selection → Detail in side panel
+    //  Record List Click → Detail
     // ============================
 
     private void RecordListView_ItemClick(object sender, ItemClickEventArgs e)
@@ -221,7 +281,7 @@ public sealed partial class MainWindow : Window
     }
 
     // ============================
-    //  Detail Actions (in side panel)
+    //  Detail Actions
     // ============================
 
     private void DetailEdit_Click(object sender, RoutedEventArgs e)
@@ -251,12 +311,12 @@ public sealed partial class MainWindow : Window
         {
             _detailViewModel.DeleteRecord();
             CloseSidePanel();
-            ViewModel.LoadRecords();
+            ApplyCurrentFilter();
         }
     }
 
     // ============================
-    //  Save Record (Add / Edit)
+    //  Save Record
     // ============================
 
     private void SaveRecord_Click(object sender, RoutedEventArgs e)
@@ -277,9 +337,8 @@ public sealed partial class MainWindow : Window
         }
 
         var savedId = _formViewModel.Save();
-        ViewModel.LoadRecords();
-
-        // Show the saved record's detail in side panel
+        ApplyCurrentFilter();
+        PopulateFilterCategories();
         OpenSidePanelDetail(savedId);
     }
 

@@ -135,16 +135,76 @@
                 </Border>
             </Grid>
 
-            <!-- Filter Bar (placeholder — Phase 4) -->
+            <!-- Filter Bar -->
             <Grid Grid.Row="2" Margin="0,0,0,12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" MaxWidth="400"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <AutoSuggestBox x:Name="SearchBox" Grid.Column="0"
-                                QueryIcon="Find" PlaceholderText="Search records..."
-                                TextChanged="SearchBox_TextChanged"/>
+                <!-- Row 1: Title, Category, Description -->
+                <Grid Grid.Row="0" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox x:Name="FilterTitle" Grid.Column="0"
+                             PlaceholderText="Search title..."
+                             TextChanged="FilterText_Changed"/>
+
+                    <ComboBox x:Name="FilterCategory" Grid.Column="2"
+                              PlaceholderText="All Categories" Width="160"
+                              SelectionChanged="FilterCategory_Changed"/>
+
+                    <TextBox x:Name="FilterDescription" Grid.Column="4"
+                             PlaceholderText="Search description..."
+                             TextChanged="FilterText_Changed"/>
+                </Grid>
+
+                <!-- Row 2: Amount range, Date range, Clear -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <NumberBox x:Name="FilterAmountMin" Grid.Column="0"
+                               PlaceholderText="Min amount" Width="130"
+                               SpinButtonPlacementMode="Hidden"
+                               ValueChanged="FilterAmount_Changed"/>
+                    <NumberBox x:Name="FilterAmountMax" Grid.Column="2"
+                               PlaceholderText="Max amount" Width="130"
+                               SpinButtonPlacementMode="Hidden"
+                               ValueChanged="FilterAmount_Changed"/>
+
+                    <CalendarDatePicker x:Name="FilterDateStart" Grid.Column="4"
+                                        PlaceholderText="From date"
+                                        DateChanged="FilterDate_Changed"/>
+                    <CalendarDatePicker x:Name="FilterDateEnd" Grid.Column="6"
+                                        PlaceholderText="To date"
+                                        DateChanged="FilterDate_Changed"/>
+
+                    <Button x:Name="ClearFiltersButton" Grid.Column="8"
+                            Click="ClearFilters_Click"
+                            Visibility="Collapsed"
+                            ToolTipService.ToolTip="Clear all filters">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE894;" FontSize="12"/>
+                            <TextBlock Text="Clear"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
             </Grid>
 
             <!-- Record Table + Side Panel -->
