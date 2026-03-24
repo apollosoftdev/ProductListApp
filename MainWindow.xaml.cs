@@ -268,10 +268,12 @@ public sealed partial class MainWindow : Window
         {
             DetailImageGallery.Visibility = Visibility.Visible;
             DetailImageGallery.ItemsSource = _detailViewModel.Images;
+            DetailNoImage.Visibility = Visibility.Collapsed;
         }
         else
         {
             DetailImageGallery.Visibility = Visibility.Collapsed;
+            DetailNoImage.Visibility = Visibility.Visible;
         }
 
         SidePanelHeaderText.Text = App.Localization.Get("detail.title");
@@ -598,6 +600,8 @@ public sealed partial class MainWindow : Window
             await AddImageFromFile(file);
     }
 
+    private const int MaxImageBytes = 1024 * 1024; // 1 MB
+
     private async Task AddImageFromFile(StorageFile file)
     {
         using var stream = await file.OpenStreamForReadAsync();
@@ -605,8 +609,60 @@ public sealed partial class MainWindow : Window
         await stream.CopyToAsync(ms);
         var bytes = ms.ToArray();
 
+        // Compress if larger than 1MB
+        if (bytes.Length > MaxImageBytes)
+            bytes = await CompressImage(bytes);
+
         _formViewModel.AddImage(bytes);
         UpdateFormImageDisplay();
+    }
+
+    private static async Task<byte[]> CompressImage(byte[] imageData)
+    {
+        using var inputStream = new MemoryStream(imageData).AsRandomAccessStream();
+        var decoder = await Windows.Graphics.Imaging.BitmapDecoder.CreateAsync(inputStream);
+
+        // Scale down: halve dimensions until under 1MB, max 1920px on longest side
+        uint maxDim = 1920;
+        uint w = decoder.PixelWidth;
+        uint h = decoder.PixelHeight;
+
+        if (w > maxDim || h > maxDim)
+        {
+            double scale = Math.Min((double)maxDim / w, (double)maxDim / h);
+            w = (uint)(w * scale);
+            h = (uint)(h * scale);
+        }
+
+        var transform = new Windows.Graphics.Imaging.BitmapTransform
+        {
+            ScaledWidth = w,
+            ScaledHeight = h,
+            InterpolationMode = Windows.Graphics.Imaging.BitmapInterpolationMode.Fant,
+        };
+
+        var pixelData = await decoder.GetPixelDataAsync(
+            Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8,
+            Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied,
+            transform,
+            Windows.Graphics.Imaging.ExifOrientationMode.IgnoreExifOrientation,
+            Windows.Graphics.Imaging.ColorManagementMode.DoNotColorManage);
+
+        using var outStream = new Windows.Storage.Streams.InMemoryRandomAccessStream();
+        var encoder = await Windows.Graphics.Imaging.BitmapEncoder.CreateAsync(
+            Windows.Graphics.Imaging.BitmapEncoder.JpegEncoderId, outStream);
+        encoder.SetPixelData(Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8,
+            Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied,
+            w, h, 96, 96, pixelData.DetachPixelData());
+        encoder.BitmapTransform.InterpolationMode = Windows.Graphics.Imaging.BitmapInterpolationMode.Fant;
+        await encoder.FlushAsync();
+
+        outStream.Seek(0);
+        var result = new byte[outStream.Size];
+        using var reader = new Windows.Storage.Streams.DataReader(outStream);
+        await reader.LoadAsync((uint)outStream.Size);
+        reader.ReadBytes(result);
+        return result;
     }
 
     private void RemoveImage_Click(object sender, RoutedEventArgs e)

@@ -179,7 +179,7 @@ public class DatabaseService
         while (rdr.Read())
         {
             var record = ReadRecord(rdr);
-            record.HasImages = HasImages(conn, record.Id);
+            LoadFirstImage(conn, record);
             list.Add(record);
         }
         return list;
@@ -449,17 +449,22 @@ public class DatabaseService
         while (rdr.Read())
         {
             var record = ReadRecord(rdr);
-            record.HasImages = HasImages(conn, record.Id);
+            LoadFirstImage(conn, record);
             list.Add(record);
         }
         return list;
     }
 
-    private static bool HasImages(SqliteConnection conn, int recordId)
+    private static void LoadFirstImage(SqliteConnection conn, Record record)
     {
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT COUNT(*) FROM RecordImages WHERE RecordId = $id";
-        cmd.Parameters.AddWithValue("$id", recordId);
-        return (long)cmd.ExecuteScalar()! > 0;
+        cmd.CommandText = "SELECT ImageData FROM RecordImages WHERE RecordId = $id ORDER BY SortOrder LIMIT 1";
+        cmd.Parameters.AddWithValue("$id", record.Id);
+        var result = cmd.ExecuteScalar();
+        if (result is byte[] data)
+        {
+            record.HasImages = true;
+            record.FirstImageData = data;
+        }
     }
 }

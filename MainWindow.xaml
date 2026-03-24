@@ -235,33 +235,31 @@
                                 BorderThickness="0,0,0,1">
                             <Grid>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="52"/>   <!-- Thumbnail -->
                                     <ColumnDefinition Width="110"/>  <!-- Date -->
-                                    <ColumnDefinition Width="140"/>   <!-- Type -->
+                                    <ColumnDefinition Width="100"/>  <!-- Type -->
                                     <ColumnDefinition Width="2.5*"/>  <!-- Title -->
                                     <ColumnDefinition Width="1.2*"/>  <!-- Category -->
                                     <ColumnDefinition Width="120"/>  <!-- Amount -->
-                                    <ColumnDefinition Width="44"/>   <!-- Image indicator -->
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock x:Name="ColDate" Grid.Column="0" Text="DATE"
+                                <TextBlock x:Name="ColDate" Grid.Column="1" Text="DATE"
                                            FontSize="12" FontWeight="SemiBold" CharacterSpacing="60"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                <TextBlock x:Name="ColType" Grid.Column="1" Text="TYPE"
+                                <TextBlock x:Name="ColType" Grid.Column="2" Text="TYPE"
                                            FontSize="12" FontWeight="SemiBold" CharacterSpacing="60"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                <TextBlock x:Name="ColTitle" Grid.Column="2" Text="TITLE"
+                                <TextBlock x:Name="ColTitle" Grid.Column="3" Text="TITLE"
                                            FontSize="12" FontWeight="SemiBold" CharacterSpacing="60"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                <TextBlock x:Name="ColCategory" Grid.Column="3" Text="CATEGORY"
+                                <TextBlock x:Name="ColCategory" Grid.Column="4" Text="CATEGORY"
                                            FontSize="12" FontWeight="SemiBold" CharacterSpacing="60"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                <TextBlock x:Name="ColAmount" Grid.Column="4" Text="AMOUNT"
+                                <TextBlock x:Name="ColAmount" Grid.Column="5" Text="AMOUNT"
                                            FontSize="12" FontWeight="SemiBold" CharacterSpacing="60"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                            HorizontalAlignment="Right" Margin="0,0,12,0"/>
-                                <FontIcon Grid.Column="5" Glyph="&#xE722;" FontSize="12"
-                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                          HorizontalAlignment="Center"/>
+                                <!-- Thumbnail column has no header -->
                             </Grid>
                         </Border>
 
@@ -278,33 +276,44 @@
                                           BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                                           BorderThickness="0,0,0,1">
                                         <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="52"/>
                                             <ColumnDefinition Width="110"/>
-                                            <ColumnDefinition Width="140"/>
+                                            <ColumnDefinition Width="100"/>
                                             <ColumnDefinition Width="2.5*"/>
                                             <ColumnDefinition Width="1.2*"/>
                                             <ColumnDefinition Width="120"/>
-                                            <ColumnDefinition Width="44"/>
                                         </Grid.ColumnDefinitions>
 
+                                        <!-- Thumbnail -->
+                                        <Grid Grid.Column="0" Width="40" Height="40" CornerRadius="6"
+                                              Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                              VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE946;" FontSize="16"
+                                                      Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                      Visibility="{Binding HasImages, Converter={StaticResource BoolToCollapsed}}"/>
+                                            <Image Source="{Binding FirstImageSource}" Stretch="UniformToFill"
+                                                   Visibility="{Binding HasImages, Converter={StaticResource BoolToVisible}}"/>
+                                        </Grid>
+
                                         <!-- Date -->
-                                        <TextBlock Grid.Column="0" Text="{Binding DateDisplay}"
+                                        <TextBlock Grid.Column="1" Text="{Binding DateDisplay}"
                                                    FontSize="13"
                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                    VerticalAlignment="Center"/>
 
                                         <!-- Balance Type -->
-                                        <TextBlock Grid.Column="1" Text="{Binding BalanceTypeDisplay}"
+                                        <TextBlock Grid.Column="2" Text="{Binding BalanceTypeDisplay}"
                                                    FontSize="11" VerticalAlignment="Center"
                                                    Foreground="{Binding Amount, Converter={StaticResource AmountToColor}}"/>
 
                                         <!-- Title -->
-                                        <TextBlock Grid.Column="2" Text="{Binding Title}"
+                                        <TextBlock Grid.Column="3" Text="{Binding Title}"
                                                    FontSize="13" FontWeight="SemiBold"
                                                    VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis"/>
 
                                         <!-- Category Badge -->
-                                        <Border Grid.Column="3"
+                                        <Border Grid.Column="4"
                                                 Background="{ThemeResource AccentFillColorDefaultBrush}"
                                                 CornerRadius="12" Padding="10,4"
                                                 HorizontalAlignment="Left" VerticalAlignment="Center">
@@ -314,18 +323,12 @@
                                         </Border>
 
                                         <!-- Amount -->
-                                        <TextBlock Grid.Column="4" Text="{Binding AmountDisplay}"
+                                        <TextBlock Grid.Column="5" Text="{Binding AmountDisplay}"
                                                    FontSize="13"
                                                    FontFamily="Cascadia Code,Consolas,Courier New"
                                                    HorizontalAlignment="Right" Margin="0,0,12,0"
                                                    VerticalAlignment="Center"
                                                    Foreground="{Binding Amount, Converter={StaticResource AmountToColor}}"/>
-
-                                        <!-- Image Indicator -->
-                                        <FontIcon Grid.Column="5" Glyph="&#xE722;" FontSize="14"
-                                                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                                  Visibility="{Binding HasImages, Converter={StaticResource BoolToVisible}}"/>
                                     </Grid>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
@@ -498,11 +501,11 @@
                         <!-- ===== Detail View ===== -->
                         <ScrollViewer x:Name="SidePanelDetail" VerticalScrollBarVisibility="Auto"
                                       Visibility="Collapsed">
-                            <StackPanel Spacing="14">
+                            <StackPanel Spacing="16">
                                 <!-- Detail Images -->
-                                <FlipView x:Name="DetailImageGallery" Height="200"
+                                <FlipView x:Name="DetailImageGallery" Height="220"
                                           Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                          CornerRadius="8" x:Load="True"
+                                          CornerRadius="10" x:Load="True"
                                           Visibility="Collapsed">
                                     <FlipView.ItemTemplate>
                                         <DataTemplate>
@@ -512,50 +515,97 @@
                                     </FlipView.ItemTemplate>
                                 </FlipView>
 
-                                <!-- Title -->
-                                <TextBlock x:Name="DetailTitle" FontSize="20" FontWeight="SemiBold"
-                                           TextWrapping="Wrap"/>
+                                <!-- No image placeholder -->
+                                <Border x:Name="DetailNoImage" Height="120" CornerRadius="10"
+                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                        Visibility="Collapsed">
+                                    <FontIcon Glyph="&#xE946;" FontSize="36"
+                                              Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
 
-                                <!-- Type + Category + Date -->
-                                <StackPanel Spacing="8">
-                                    <StackPanel Orientation="Horizontal" Spacing="10">
-                                        <Border x:Name="DetailBalanceTypeBorder" CornerRadius="12" Padding="10,4">
-                                            <TextBlock x:Name="DetailBalanceType" FontSize="11" FontWeight="Medium"
+                                <!-- Amount (prominent) -->
+                                <Border CornerRadius="10" Padding="16"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock x:Name="DetailAmountLabel" Text="Amount" FontSize="12"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock x:Name="DetailAmount" FontSize="28" FontWeight="Bold"
+                                                       FontFamily="Cascadia Code,Consolas,Courier New"
+                                                       Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <Border Grid.Column="1" x:Name="DetailBalanceTypeBorder"
+                                                CornerRadius="12" Padding="12,6" VerticalAlignment="Center">
+                                            <TextBlock x:Name="DetailBalanceType" FontSize="12" FontWeight="Medium"
                                                        Foreground="White"/>
                                         </Border>
-                                        <Border Background="{ThemeResource AccentFillColorDefaultBrush}"
-                                                CornerRadius="12" Padding="10,4">
-                                            <TextBlock x:Name="DetailCategory" FontSize="11" FontWeight="Medium"
-                                                       Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"/>
-                                        </Border>
-                                        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                            <FontIcon Glyph="&#xE787;" FontSize="12"
-                                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                            <TextBlock x:Name="DetailDate" FontSize="12"
-                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </StackPanel>
+                                    </Grid>
+                                </Border>
 
-                                <!-- Amount -->
-                                <StackPanel>
-                                    <TextBlock x:Name="DetailAmountLabel" Text="Amount" FontSize="12"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                    <TextBlock x:Name="DetailAmount" FontSize="28" FontWeight="Bold"
-                                               FontFamily="Cascadia Code,Consolas,Courier New"
-                                               Margin="0,4,0,0"/>
-                                </StackPanel>
+                                <!-- Title -->
+                                <TextBlock x:Name="DetailTitle" FontSize="18" FontWeight="SemiBold"
+                                           TextWrapping="Wrap"/>
+
+                                <!-- Info Grid -->
+                                <Border CornerRadius="10" Padding="16"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="12">
+                                        <!-- Category -->
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Category" FontSize="12"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                       VerticalAlignment="Center"/>
+                                            <Border Grid.Column="1"
+                                                    Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                    CornerRadius="12" Padding="10,4"
+                                                    HorizontalAlignment="Left">
+                                                <TextBlock x:Name="DetailCategory" FontSize="11" FontWeight="Medium"
+                                                           Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"/>
+                                            </Border>
+                                        </Grid>
+                                        <!-- Date -->
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Date" FontSize="12"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                       VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                                <FontIcon Glyph="&#xE787;" FontSize="12"
+                                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                                <TextBlock x:Name="DetailDate" FontSize="13"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
 
                                 <!-- Description -->
-                                <StackPanel x:Name="DetailDescriptionSection">
-                                    <TextBlock x:Name="DetailDescLabel" Text="Description" FontSize="12"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                    <TextBlock x:Name="DetailDescription" FontSize="13"
-                                               TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                </StackPanel>
+                                <Border x:Name="DetailDescriptionSection" CornerRadius="10" Padding="16"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock x:Name="DetailDescLabel" Text="Description" FontSize="12"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                        <TextBlock x:Name="DetailDescription" FontSize="13"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
 
                                 <!-- Actions -->
-                                <Grid Margin="0,8,0,0">
+                                <Grid Margin="0,4,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="8"/>

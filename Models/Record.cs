@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace LedgerDesk.Models;
 
@@ -64,10 +65,30 @@ public class Record : INotifyPropertyChanged
         set { _updatedAt = value; OnPropertyChanged(); }
     }
 
+    private byte[]? _firstImageData;
+
     public bool HasImages
     {
         get => _hasImages;
         set { _hasImages = value; OnPropertyChanged(); }
+    }
+
+    public byte[]? FirstImageData
+    {
+        get => _firstImageData;
+        set { _firstImageData = value; OnPropertyChanged(); OnPropertyChanged(nameof(FirstImageSource)); }
+    }
+
+    public BitmapImage? FirstImageSource
+    {
+        get
+        {
+            if (_firstImageData is not { Length: > 0 }) return null;
+            var bmp = new BitmapImage();
+            using var stream = new System.IO.MemoryStream(_firstImageData);
+            bmp.SetSource(stream.AsRandomAccessStream());
+            return bmp;
+        }
     }
 
     public int BalanceType
