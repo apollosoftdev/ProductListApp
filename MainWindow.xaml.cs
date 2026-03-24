@@ -226,12 +226,13 @@ public sealed partial class MainWindow : Window
             DetailImageGallery.Visibility = Visibility.Collapsed;
         }
 
+        SidePanelHeaderText.Text = App.Localization.Get("detail.title");
         ShowSidePanel("Detail");
     }
 
     private void OpenSidePanelForm()
     {
-        SidePanelHeader.Text = _formViewModel.HeaderText;
+        SidePanelHeaderText.Text = _formViewModel.HeaderText;
 
         FormCategory.Items.Clear();
         foreach (var cat in ViewModel.Categories)
@@ -253,7 +254,6 @@ public sealed partial class MainWindow : Window
 
     private void ShowSidePanel(string mode)
     {
-        SidePanelColumn.Width = new GridLength(380);
         SidePanel.Visibility = Visibility.Visible;
         SidePanelDetail.Visibility = mode == "Detail" ? Visibility.Visible : Visibility.Collapsed;
         SidePanelForm.Visibility = mode == "Form" ? Visibility.Visible : Visibility.Collapsed;
@@ -261,7 +261,6 @@ public sealed partial class MainWindow : Window
 
     private void CloseSidePanel()
     {
-        SidePanelColumn.Width = new GridLength(0);
         SidePanel.Visibility = Visibility.Collapsed;
         SidePanelDetail.Visibility = Visibility.Collapsed;
         SidePanelForm.Visibility = Visibility.Collapsed;
@@ -269,6 +268,8 @@ public sealed partial class MainWindow : Window
     }
 
     private void CloseSidePanel_Click(object sender, RoutedEventArgs e) => CloseSidePanel();
+
+    private void SidePanelBackdrop_Click(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e) => CloseSidePanel();
 
     // ============================
     //  Header Button Handlers
@@ -824,7 +825,6 @@ public sealed partial class MainWindow : Window
         EmptySubtitle.Text = l.Get("empty.subtitle");
 
         // Detail panel
-        DetailHeaderText.Text = l.Get("detail.title");
         DetailAmountLabel.Text = l.Get("detail.amount_label");
         DetailDescLabel.Text = l.Get("detail.desc_label");
         DetailEditText.Text = l.Get("detail.edit");

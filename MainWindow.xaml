@@ -11,6 +11,15 @@
             <helpers:BoolToVisibilityConverter x:Key="BoolToVisible"/>
             <helpers:BoolToVisibilityConverter x:Key="BoolToCollapsed" Invert="True"/>
             <helpers:AmountToColorConverter x:Key="AmountToColor"/>
+            <Style x:Key="CloseIconButton" TargetType="Button">
+                <Setter Property="Width" Value="32"/>
+                <Setter Property="Height" Value="32"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="CornerRadius" Value="16"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="HorizontalAlignment" Value="Right"/>
+            </Style>
         </Grid.Resources>
 
         <Grid.RowDefinitions>
@@ -207,15 +216,9 @@
                 </Grid>
             </Grid>
 
-            <!-- Record Table + Side Panel -->
+            <!-- Record Table -->
             <Grid Grid.Row="3">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition x:Name="SidePanelColumn" Width="0"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Record Table -->
-                <Border Grid.Column="0" CornerRadius="8" BorderThickness="1"
+                <Border CornerRadius="8" BorderThickness="1"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
                     <Grid>
@@ -233,7 +236,7 @@
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="110"/>  <!-- Date -->
-                                    <ColumnDefinition Width="80"/>   <!-- Type -->
+                                    <ColumnDefinition Width="140"/>   <!-- Type -->
                                     <ColumnDefinition Width="2.5*"/>  <!-- Title -->
                                     <ColumnDefinition Width="1.2*"/>  <!-- Category -->
                                     <ColumnDefinition Width="120"/>  <!-- Amount -->
@@ -276,7 +279,7 @@
                                           BorderThickness="0,0,0,1">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="110"/>
-                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="140"/>
                                             <ColumnDefinition Width="2.5*"/>
                                             <ColumnDefinition Width="1.2*"/>
                                             <ColumnDefinition Width="120"/>
@@ -352,28 +355,132 @@
                         </StackPanel>
                     </Grid>
                 </Border>
+            </Grid>
 
-                <!-- Side Panel: Detail / Add / Edit -->
-                <Border x:Name="SidePanel" Grid.Column="1" Margin="12,0,0,0"
-                        CornerRadius="8" BorderThickness="1"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            <!-- Status Bar -->
+            <Grid Grid.Row="4" Margin="0,10,0,0">
+                <TextBlock Text="{Binding StatusText}" FontSize="12"
+                           Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+            </Grid>
+        </Grid>
+
+        <!-- ==================== Activation Panel ==================== -->
+        <Grid x:Name="ActivationPanel" Grid.Row="1" Visibility="Collapsed">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                        MaxWidth="420" MinWidth="360" Spacing="20">
+                <!-- Icon + Title -->
+                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                    <FontIcon Glyph="&#xE72E;" FontSize="48"
+                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                              HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="ActivationTitle" Text="License Activation" FontSize="24" FontWeight="SemiBold"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="ActivationSubtitle" Text="Enter your license key to activate LedgerDesk"
+                               FontSize="13"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- MAC Address -->
+                <Border CornerRadius="8" Padding="16"
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        Visibility="Collapsed">
-                    <Grid>
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                    <StackPanel Spacing="4">
+                        <TextBlock x:Name="ActivationMacLabel" Text="Device ID (MAC Address)" FontSize="12"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock x:Name="ActivationMacAddress"
+                                   FontSize="16" FontFamily="Cascadia Code,Consolas,Courier New"
+                                   IsTextSelectionEnabled="True"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- License Key Input -->
+                <TextBox x:Name="ActivationKeyInput" Header="License Key"
+                         PlaceholderText="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+                         FontFamily="Cascadia Code,Consolas,Courier New"
+                         MaxLength="29" HorizontalAlignment="Stretch"/>
+
+                <!-- Error Message -->
+                <TextBlock x:Name="ActivationError" Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                           FontSize="13" Visibility="Collapsed"
+                           HorizontalAlignment="Center"/>
+
+                <!-- Activate Button -->
+                <Button x:Name="ActivateButton" Content="Activate" Style="{StaticResource AccentButtonStyle}"
+                        HorizontalAlignment="Stretch" Click="Activate_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ==================== Login Panel ==================== -->
+        <Grid x:Name="LoginPanel" Grid.Row="1" Visibility="Collapsed">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                        MaxWidth="360" MinWidth="320" Spacing="20">
+                <!-- Icon + Title -->
+                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                    <FontIcon Glyph="&#xE77B;" FontSize="48"
+                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                              HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="LoginTitle" Text="Welcome Back" FontSize="24" FontWeight="SemiBold"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="LoginSubtitle" Text="Enter your password to continue"
+                               FontSize="13"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Password -->
+                <PasswordBox x:Name="LoginPassword" Header="Password"
+                             PlaceholderText="Enter password"
+                             KeyDown="LoginPassword_KeyDown"/>
+
+                <!-- Confirm Password (first run only) -->
+                <PasswordBox x:Name="LoginConfirmPassword" Header="Confirm Password"
+                             PlaceholderText="Re-enter password"
+                             Visibility="Collapsed"
+                             KeyDown="LoginPassword_KeyDown"/>
+
+                <!-- Error Message -->
+                <TextBlock x:Name="LoginError" Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                           FontSize="13" Visibility="Collapsed"
+                           HorizontalAlignment="Center"/>
+
+                <!-- Login Button -->
+                <Button x:Name="LoginButton" Content="Login"
+                        Style="{StaticResource AccentButtonStyle}"
+                        HorizontalAlignment="Stretch" Click="Login_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ==================== Record Sheet Overlay (Detail / Add / Edit) ==================== -->
+        <Grid x:Name="SidePanel" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed">
+            <Border Background="#80000000" PointerPressed="SidePanelBackdrop_Click"/>
+
+            <Border HorizontalAlignment="Right" Width="460"
+                    Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1,0,0,0">
+                <Grid Padding="24,56,24,24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,16">
+                        <TextBlock x:Name="SidePanelHeaderText" FontSize="20" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                        <Button Style="{StaticResource CloseIconButton}"
+                                Click="CloseSidePanel_Click" ToolTipService.ToolTip="Close">
+                            <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Content -->
+                    <Grid Grid.Row="1">
                         <!-- ===== Detail View ===== -->
                         <ScrollViewer x:Name="SidePanelDetail" VerticalScrollBarVisibility="Auto"
-                                      Visibility="Collapsed" Padding="20">
+                                      Visibility="Collapsed">
                             <StackPanel Spacing="14">
-                                <!-- Header -->
-                                <Grid Margin="0,0,0,4">
-                                    <TextBlock x:Name="DetailHeaderText" Text="Record Detail"
-                                               FontSize="18" FontWeight="SemiBold"/>
-                                    <Button HorizontalAlignment="Right" Click="CloseSidePanel_Click"
-                                            ToolTipService.ToolTip="Close">
-                                        <FontIcon Glyph="&#xE711;" FontSize="12"/>
-                                    </Button>
-                                </Grid>
-
                                 <!-- Detail Images -->
                                 <FlipView x:Name="DetailImageGallery" Height="200"
                                           Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
@@ -458,18 +565,8 @@
 
                         <!-- ===== Add/Edit Form ===== -->
                         <ScrollViewer x:Name="SidePanelForm" VerticalScrollBarVisibility="Auto"
-                                      Visibility="Collapsed" Padding="20">
+                                      Visibility="Collapsed">
                             <StackPanel Spacing="14">
-                                <!-- Header -->
-                                <Grid Margin="0,0,0,4">
-                                    <TextBlock x:Name="SidePanelHeader" Text="New Record"
-                                               FontSize="18" FontWeight="SemiBold"/>
-                                    <Button HorizontalAlignment="Right" Click="CloseSidePanel_Click"
-                                            ToolTipService.ToolTip="Close">
-                                        <FontIcon Glyph="&#xE711;" FontSize="12"/>
-                                    </Button>
-                                </Grid>
-
                                 <!-- Image Drop Zone -->
                                 <Grid x:Name="FormImageDropZone" MinHeight="100" CornerRadius="8"
                                       Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
@@ -477,8 +574,6 @@
                                       BorderThickness="1" AllowDrop="True"
                                       DragOver="FormImageDropZone_DragOver"
                                       Drop="FormImageDropZone_Drop">
-
-                                    <!-- Image thumbnails (wrapping grid) -->
                                     <ItemsControl x:Name="FormImageList" Margin="8"
                                                   Visibility="Collapsed">
                                         <ItemsControl.ItemsPanel>
@@ -504,8 +599,6 @@
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
-
-                                    <!-- Placeholder -->
                                     <StackPanel x:Name="FormImagePlaceholder" VerticalAlignment="Center"
                                                 HorizontalAlignment="Center" Spacing="4">
                                         <FontIcon Glyph="&#xE722;" FontSize="24"
@@ -538,28 +631,18 @@
                                     </Grid>
                                 </StackPanel>
 
-                                <!-- Title -->
                                 <TextBox x:Name="FormTitle" Header="Title"
                                          PlaceholderText="e.g. Office Supplies"/>
-
-                                <!-- Category -->
                                 <ComboBox x:Name="FormCategory" Header="Category"
                                           IsEditable="True" PlaceholderText="Select or type..."
                                           HorizontalAlignment="Stretch"/>
-
-                                <!-- Amount -->
                                 <NumberBox x:Name="FormAmount" Header="Amount"
-                                           PlaceholderText="0.00"
-                                           Minimum="0"
+                                           PlaceholderText="0.00" Minimum="0"
                                            SpinButtonPlacementMode="Compact"
                                            SmallChange="1" LargeChange="100"/>
-
-                                <!-- Date -->
                                 <CalendarDatePicker x:Name="FormDate" Header="Date"
                                                     HorizontalAlignment="Stretch"
                                                     PlaceholderText="Select date"/>
-
-                                <!-- Description -->
                                 <TextBox x:Name="FormDescription" Header="Description"
                                          PlaceholderText="Add details..."
                                          AcceptsReturn="True" TextWrapping="Wrap" MinHeight="80"/>
@@ -582,101 +665,8 @@
                             </StackPanel>
                         </ScrollViewer>
                     </Grid>
-                </Border>
-            </Grid>
-
-            <!-- Status Bar -->
-            <Grid Grid.Row="4" Margin="0,10,0,0">
-                <TextBlock Text="{Binding StatusText}" FontSize="12"
-                           Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
-            </Grid>
-        </Grid>
-
-        <!-- ==================== Activation Panel ==================== -->
-        <Grid x:Name="ActivationPanel" Grid.Row="1" Visibility="Collapsed">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
-                        MaxWidth="420" Spacing="20">
-                <!-- Icon + Title -->
-                <StackPanel HorizontalAlignment="Center" Spacing="8">
-                    <FontIcon Glyph="&#xE72E;" FontSize="48"
-                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                              HorizontalAlignment="Center"/>
-                    <TextBlock x:Name="ActivationTitle" Text="License Activation" FontSize="24" FontWeight="SemiBold"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock x:Name="ActivationSubtitle" Text="Enter your license key to activate LedgerDesk"
-                               FontSize="13"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               HorizontalAlignment="Center"/>
-                </StackPanel>
-
-                <!-- MAC Address -->
-                <Border CornerRadius="8" Padding="16"
-                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
-                    <StackPanel Spacing="4">
-                        <TextBlock x:Name="ActivationMacLabel" Text="Device ID (MAC Address)" FontSize="12"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                        <TextBlock x:Name="ActivationMacAddress"
-                                   FontSize="16" FontFamily="Cascadia Code,Consolas,Courier New"
-                                   IsTextSelectionEnabled="True"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- License Key Input -->
-                <TextBox x:Name="ActivationKeyInput" Header="License Key"
-                         PlaceholderText="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-                         FontFamily="Cascadia Code,Consolas,Courier New"
-                         MaxLength="29" HorizontalAlignment="Stretch"/>
-
-                <!-- Error Message -->
-                <TextBlock x:Name="ActivationError" Foreground="{ThemeResource SystemFillColorCriticalBrush}"
-                           FontSize="13" Visibility="Collapsed"
-                           HorizontalAlignment="Center"/>
-
-                <!-- Activate Button -->
-                <Button x:Name="ActivateButton" Content="Activate" Style="{StaticResource AccentButtonStyle}"
-                        HorizontalAlignment="Stretch" Click="Activate_Click"/>
-            </StackPanel>
-        </Grid>
-
-        <!-- ==================== Login Panel ==================== -->
-        <Grid x:Name="LoginPanel" Grid.Row="1" Visibility="Collapsed">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
-                        MaxWidth="360" Spacing="20">
-                <!-- Icon + Title -->
-                <StackPanel HorizontalAlignment="Center" Spacing="8">
-                    <FontIcon Glyph="&#xE77B;" FontSize="48"
-                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                              HorizontalAlignment="Center"/>
-                    <TextBlock x:Name="LoginTitle" Text="Welcome Back" FontSize="24" FontWeight="SemiBold"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock x:Name="LoginSubtitle" Text="Enter your password to continue"
-                               FontSize="13"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               HorizontalAlignment="Center"/>
-                </StackPanel>
-
-                <!-- Password -->
-                <PasswordBox x:Name="LoginPassword" Header="Password"
-                             PlaceholderText="Enter password"
-                             KeyDown="LoginPassword_KeyDown"/>
-
-                <!-- Confirm Password (first run only) -->
-                <PasswordBox x:Name="LoginConfirmPassword" Header="Confirm Password"
-                             PlaceholderText="Re-enter password"
-                             Visibility="Collapsed"
-                             KeyDown="LoginPassword_KeyDown"/>
-
-                <!-- Error Message -->
-                <TextBlock x:Name="LoginError" Foreground="{ThemeResource SystemFillColorCriticalBrush}"
-                           FontSize="13" Visibility="Collapsed"
-                           HorizontalAlignment="Center"/>
-
-                <!-- Login Button -->
-                <Button x:Name="LoginButton" Content="Login"
-                        Style="{StaticResource AccentButtonStyle}"
-                        HorizontalAlignment="Stretch" Click="Login_Click"/>
-            </StackPanel>
+                </Grid>
+            </Border>
         </Grid>
 
         <!-- ==================== Settings Overlay Sheet ==================== -->
@@ -689,7 +679,7 @@
                     Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1,0,0,0">
-                <Grid Padding="28,16,28,24">
+                <Grid Padding="28,56,28,24">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -697,10 +687,11 @@
 
                     <!-- Header -->
                     <Grid Grid.Row="0" Margin="0,0,0,20">
-                        <TextBlock x:Name="SettingsTitleText" Text="Settings" FontSize="22" FontWeight="SemiBold"/>
-                        <Button HorizontalAlignment="Right" Click="SettingsBack_Click"
-                                ToolTipService.ToolTip="Close">
-                            <FontIcon Glyph="&#xE711;" FontSize="14"/>
+                        <TextBlock x:Name="SettingsTitleText" Text="Settings" FontSize="22" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                        <Button Style="{StaticResource CloseIconButton}"
+                                Click="SettingsBack_Click" ToolTipService.ToolTip="Close">
+                            <FontIcon Glyph="&#xE711;" FontSize="12"/>
                         </Button>
                     </Grid>
 
