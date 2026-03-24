@@ -348,30 +348,51 @@ public sealed partial class MainWindow : Window
         double scaleX = _cropDecoder.PixelWidth / _imgDisplayW;
         double scaleY = _cropDecoder.PixelHeight / _imgDisplayH;
 
-        uint origX = (uint)Math.Round((_cropX - _imgDisplayX) * scaleX);
-        uint origY = (uint)Math.Round((_cropY - _imgDisplayY) * scaleY);
-        uint origSide = (uint)Math.Round(_cropSide * Math.Max(scaleX, scaleY));
+        uint origX = (uint)Math.Max(0, Math.Round((_cropX - _imgDisplayX) * scaleX));
+        uint origY = (uint)Math.Max(0, Math.Round((_cropY - _imgDisplayY) * scaleY));
+        uint origSide = (uint)Math.Round(_cropSide * Math.Min(scaleX, scaleY));
 
         // Clamp to image bounds
-        origX = Math.Min(origX, _cropDecoder.PixelWidth - 1);
-        origY = Math.Min(origY, _cropDecoder.PixelHeight - 1);
-        origSide = Math.Max(1, Math.Min(origSide,
-            Math.Min(_cropDecoder.PixelWidth - origX, _cropDecoder.PixelHeight - origY)));
+        uint imgW = _cropDecoder.PixelWidth;
+        uint imgH = _cropDecoder.PixelHeight;
+        if (origX + origSide > imgW) origSide = imgW - origX;
+        if (origY + origSide > imgH) origSide = imgH - origY;
+        origSide = Math.Max(1, origSide);
 
-        // Crop + resize to 512x512 in one pass
-        var transform = new BitmapTransform
+        // Crop using BitmapBounds — ScaledWidth/Height must match the full source
+        var cropTransform = new BitmapTransform
         {
-            ScaledWidth = ImageSize,
-            ScaledHeight = ImageSize,
+            ScaledWidth = imgW,
+            ScaledHeight = imgH,
             InterpolationMode = BitmapInterpolationMode.Fant,
             Bounds = new BitmapBounds { X = origX, Y = origY, Width = origSide, Height = origSide },
         };
 
         _cropStream!.Seek(0);
         var decoder2 = await BitmapDecoder.CreateAsync(_cropStream);
-        var pixelData = await decoder2.GetPixelDataAsync(
+        var croppedData = await decoder2.GetPixelDataAsync(
             BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied,
-            transform, ExifOrientationMode.RespectExifOrientation,
+            cropTransform, ExifOrientationMode.IgnoreExifOrientation,
+            ColorManagementMode.DoNotColorManage);
+
+        // Encode cropped image, then decode+resize to exact 512x512
+        using var tempStream = new InMemoryRandomAccessStream();
+        var cropEncoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, tempStream);
+        cropEncoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied,
+            origSide, origSide, 96, 96, croppedData.DetachPixelData());
+        await cropEncoder.FlushAsync();
+
+        tempStream.Seek(0);
+        var resizeDecoder = await BitmapDecoder.CreateAsync(tempStream);
+        var resizeTransform = new BitmapTransform
+        {
+            ScaledWidth = ImageSize,
+            ScaledHeight = ImageSize,
+            InterpolationMode = BitmapInterpolationMode.Fant,
+        };
+        var pixelData = await resizeDecoder.GetPixelDataAsync(
+            BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied,
+            resizeTransform, ExifOrientationMode.IgnoreExifOrientation,
             ColorManagementMode.DoNotColorManage);
 
         using var outStream = new InMemoryRandomAccessStream();

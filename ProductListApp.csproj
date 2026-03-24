@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -15,7 +15,25 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <EnableDefaultXamlItems>true</EnableDefaultXamlItems>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+	<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
+
+  <!-- Exclude .winmd files from build/publish output (not needed at runtime for CsWinRT projections) -->
+  <!-- See: https://github.com/microsoft/WindowsAppSDK/issues/3843 -->
+  <Target Name="ExcludeWinMDFromOutput"
+          AfterTargets="AddMicrosoftWindowsAppSDKPayloadFilesFromMsix;AddMicrosoftWindowsAppSDKPayloadFilesFromComponents">
+    <ItemGroup>
+      <None Remove="@(None)" Condition="'%(Extension)' == '.winmd'" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Copy ProductListApp.pri to publish output (dotnet publish omits it) -->
+  <Target Name="CopyPriOnPublish" AfterTargets="Publish">
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).pri"
+          DestinationFolder="$(PublishDir)"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(OutputPath)$(AssemblyName).pri')" />
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260317003" />

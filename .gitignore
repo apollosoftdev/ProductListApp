@@ -3,6 +3,7 @@ bin/
 obj/
 publish/
 artifacts/
+installer_output/
 
 ## User-specific files
 *.user
