@@ -125,8 +125,9 @@ public sealed partial class MainWindow : Window
         var theme = App.Settings.Get("theme", "Default");
         ApplyTheme(theme);
 
-        PopulateFilterCategories();
         ViewModel.LoadRecords();
+        PopulateFilterCategories();
+        PopulateFilterDropdowns();
         ShowPanel("Main");
     }
 
@@ -243,8 +244,8 @@ public sealed partial class MainWindow : Window
         DetailTitle.Text = record.Title;
         DetailCategory.Text = record.Category;
         DetailDate.Text = record.DateDisplay;
-        DetailBalanceType.Text = record.BalanceTypeDisplay;
-        DetailBalanceTypeBorder.Background = record.IsExpense
+        DetailPaymentType.Text = record.PaymentTypeDisplay;
+        DetailPaymentTypeBorder.Background = record.IsExpense
             ? new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 239, 68, 68))
             : new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 16, 185, 129));
         DetailAmount.Text = record.AmountDisplay;
@@ -290,8 +291,8 @@ public sealed partial class MainWindow : Window
             FormCategory.Items.Add(cat);
 
         // Balance type toggles
-        FormIncomeToggle.IsChecked = _formViewModel.BalanceType == 0;
-        FormExpenseToggle.IsChecked = _formViewModel.BalanceType == 1;
+        FormIncomeToggle.IsChecked = _formViewModel.PaymentType == 0;
+        FormExpenseToggle.IsChecked = _formViewModel.PaymentType == 1;
 
         FormTitle.Text = _formViewModel.Title;
         FormCategory.Text = _formViewModel.Category;
@@ -400,6 +401,31 @@ public sealed partial class MainWindow : Window
         FilterCategory.SelectedIndex = 0;
     }
 
+    private void PopulateFilterDropdowns()
+    {
+        var l = App.Localization;
+
+        // Payment type
+        if (FilterPaymentType.Items.Count == 0)
+        {
+            FilterPaymentType.Items.Add(l.Get("payment.all"));
+            FilterPaymentType.Items.Add(l.Get("payment.income"));
+            FilterPaymentType.Items.Add(l.Get("payment.expense"));
+            FilterPaymentType.SelectedIndex = 0;
+        }
+
+        // Sort options
+        if (FilterSort.Items.Count == 0)
+        {
+            FilterSort.Items.Add(new ComboBoxItem { Content = l.Get("table.date"), Tag = "date" });
+            FilterSort.Items.Add(new ComboBoxItem { Content = l.Get("table.title"), Tag = "title" });
+            FilterSort.Items.Add(new ComboBoxItem { Content = l.Get("table.amount"), Tag = "amount" });
+            FilterSort.Items.Add(new ComboBoxItem { Content = l.Get("table.category"), Tag = "category" });
+            FilterSort.Items.Add(new ComboBoxItem { Content = l.Get("payment.type_label"), Tag = "type" });
+            FilterSort.SelectedIndex = 0;
+        }
+    }
+
     private void FilterText_Changed(object sender, TextChangedEventArgs e)
     {
         if (ReferenceEquals(sender, FilterTitle))
@@ -414,6 +440,26 @@ public sealed partial class MainWindow : Window
             _filterViewModel.SelectedCategory = selected;
         else
             _filterViewModel.SelectedCategory = null;
+    }
+
+    private void FilterPaymentType_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (FilterPaymentType.SelectedIndex <= 0)
+            _filterViewModel.SelectedPaymentType = null;
+        else
+            _filterViewModel.SelectedPaymentType = FilterPaymentType.SelectedIndex - 1; // 1=Income(0), 2=Expense(1)
+    }
+
+    private void FilterSort_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (FilterSort.SelectedItem is not ComboBoxItem item) return;
+        _filterViewModel.SortBy = item.Tag?.ToString() ?? "date";
+    }
+
+    private void FilterSortDirection_Click(object sender, RoutedEventArgs e)
+    {
+        _filterViewModel.SortDescending = !_filterViewModel.SortDescending;
+        FilterSortIcon.Glyph = _filterViewModel.SortDescending ? "\uE74B" : "\uE74A";
     }
 
     private void FilterAmount_Changed(NumberBox sender, NumberBoxValueChangedEventArgs args)
@@ -440,6 +486,7 @@ public sealed partial class MainWindow : Window
         FilterTitle.Text = "";
         FilterDescription.Text = "";
         FilterCategory.SelectedIndex = 0;
+        FilterPaymentType.SelectedIndex = 0;
         FilterAmountMin.Value = double.NaN;
         FilterAmountMax.Value = double.NaN;
         FilterDateStart.Date = null;
@@ -529,7 +576,7 @@ public sealed partial class MainWindow : Window
         _formViewModel.Category = FormCategory.Text?.Trim() ?? "";
         _formViewModel.Description = FormDescription.Text?.Trim() ?? "";
         _formViewModel.Amount = double.IsNaN(FormAmount.Value) ? 0 : FormAmount.Value;
-        _formViewModel.BalanceType = FormExpenseToggle.IsChecked == true ? 1 : 0;
+        _formViewModel.PaymentType = FormExpenseToggle.IsChecked == true ? 1 : 0;
         _formViewModel.Date = FormDate.Date ?? DateTimeOffset.Now;
 
         if (!_formViewModel.Validate())
@@ -551,7 +598,7 @@ public sealed partial class MainWindow : Window
     //  Balance Type Toggle
     // ============================
 
-    private void BalanceType_Click(object sender, RoutedEventArgs e)
+    private void PaymentType_Click(object sender, RoutedEventArgs e)
     {
         if (ReferenceEquals(sender, FormIncomeToggle))
         {
@@ -703,8 +750,8 @@ public sealed partial class MainWindow : Window
     {
         HideSheet(SettingsPanel, () =>
         {
-            PopulateFilterCategories();
             ViewModel.LoadRecords();
+            PopulateFilterCategories();
         });
     }
 
@@ -977,7 +1024,7 @@ public sealed partial class MainWindow : Window
 
         // Table headers
         ColDate.Text = l.Get("table.date");
-        ColType.Text = l.Get("balance.type_label");
+        ColType.Text = l.Get("payment.type_label");
         ColTitle.Text = l.Get("table.title");
         ColCategory.Text = l.Get("table.category");
         ColAmount.Text = l.Get("table.amount");
@@ -993,9 +1040,9 @@ public sealed partial class MainWindow : Window
         DetailDeleteText.Text = l.Get("detail.delete");
 
         // Form panel
-        FormBalanceTypeLabel.Text = l.Get("balance.type_label");
-        FormIncomeToggle.Content = l.Get("balance.income");
-        FormExpenseToggle.Content = l.Get("balance.expense");
+        FormPaymentTypeLabel.Text = l.Get("payment.type_label");
+        FormIncomeToggle.Content = l.Get("payment.income");
+        FormExpenseToggle.Content = l.Get("payment.expense");
         FormImageDropText.Text = l.Get("form.image_drop");
         FormImageBrowseLink.Content = l.Get("form.image_browse");
         FormTitle.Header = l.Get("form.title_header");

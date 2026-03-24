@@ -40,17 +40,17 @@ public class DatabaseService
                 Category    TEXT    NOT NULL,
                 Description TEXT    NOT NULL DEFAULT '',
                 Amount      REAL    NOT NULL,
-                BalanceType INTEGER NOT NULL DEFAULT 0,
+                PaymentType INTEGER NOT NULL DEFAULT 0,
                 Date        TEXT    NOT NULL,
                 CreatedAt   TEXT    NOT NULL,
                 UpdatedAt   TEXT    NOT NULL
             )
             """);
 
-        // Migration: add BalanceType column if missing
+        // Migration: add PaymentType column if missing
         try
         {
-            Execute(conn, "ALTER TABLE Records ADD COLUMN BalanceType INTEGER NOT NULL DEFAULT 0");
+            Execute(conn, "ALTER TABLE Records ADD COLUMN PaymentType INTEGER NOT NULL DEFAULT 0");
         }
         catch (SqliteException) { /* column already exists */ }
 
@@ -103,7 +103,7 @@ public class DatabaseService
     public List<Record> GetAllRecords()
     {
         using var conn = Open();
-        return QueryRecords(conn, "SELECT Id, Title, Category, Description, Amount, BalanceType, Date, CreatedAt, UpdatedAt FROM Records ORDER BY Date DESC, Id DESC");
+        return QueryRecords(conn, "SELECT Id, Title, Category, Description, Amount, PaymentType, Date, CreatedAt, UpdatedAt FROM Records ORDER BY Date DESC, Id DESC");
     }
 
     public List<Record> GetRecordsPaged(int page, int pageSize)
@@ -111,7 +111,7 @@ public class DatabaseService
         using var conn = Open();
         var offset = page * pageSize;
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = $"SELECT Id, Title, Category, Description, Amount, BalanceType, Date, CreatedAt, UpdatedAt FROM Records ORDER BY Date DESC, Id DESC LIMIT {pageSize} OFFSET {offset}";
+        cmd.CommandText = $"SELECT Id, Title, Category, Description, Amount, PaymentType, Date, CreatedAt, UpdatedAt FROM Records ORDER BY Date DESC, Id DESC LIMIT {pageSize} OFFSET {offset}";
 
         var list = new List<Record>();
         using var rdr = cmd.ExecuteReader();
@@ -136,7 +136,7 @@ public class DatabaseService
     {
         using var conn = Open();
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT Id, Title, Category, Description, Amount, BalanceType, Date, CreatedAt, UpdatedAt FROM Records WHERE Id = $id";
+        cmd.CommandText = "SELECT Id, Title, Category, Description, Amount, PaymentType, Date, CreatedAt, UpdatedAt FROM Records WHERE Id = $id";
         cmd.Parameters.AddWithValue("$id", id);
 
         using var rdr = cmd.ExecuteReader();
@@ -146,9 +146,9 @@ public class DatabaseService
     public List<Record> SearchRecords(RecordFilter filter, int page = -1, int pageSize = 50)
     {
         using var conn = Open();
-        var (where, parameters) = BuildFilterClause(filter);
+        var (where, orderBy, parameters) = BuildFilterClause(filter);
 
-        var sql = $"SELECT Id, Title, Category, Description, Amount, BalanceType, Date, CreatedAt, UpdatedAt FROM Records{where} ORDER BY Date DESC, Id DESC";
+        var sql = $"SELECT Id, Title, Category, Description, Amount, PaymentType, Date, CreatedAt, UpdatedAt FROM Records{where}{orderBy}";
         if (page >= 0)
             sql += $" LIMIT {pageSize} OFFSET {page * pageSize}";
 
@@ -171,7 +171,7 @@ public class DatabaseService
     public int SearchRecordCount(RecordFilter filter)
     {
         using var conn = Open();
-        var (where, parameters) = BuildFilterClause(filter);
+        var (where, _, parameters) = BuildFilterClause(filter);
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = $"SELECT COUNT(*) FROM Records{where}";
@@ -181,7 +181,7 @@ public class DatabaseService
         return Convert.ToInt32(cmd.ExecuteScalar());
     }
 
-    private static (string where, List<SqliteParameter> parameters) BuildFilterClause(RecordFilter filter)
+    private static (string where, string orderBy, List<SqliteParameter> parameters) BuildFilterClause(RecordFilter filter)
     {
         var conditions = new List<string>();
         var parameters = new List<SqliteParameter>();
@@ -195,6 +195,11 @@ public class DatabaseService
         {
             conditions.Add("Category = $category");
             parameters.Add(new SqliteParameter("$category", filter.CategoryFilter));
+        }
+        if (filter.PaymentTypeFilter.HasValue)
+        {
+            conditions.Add("PaymentType = $paymentType");
+            parameters.Add(new SqliteParameter("$paymentType", filter.PaymentTypeFilter.Value));
         }
         if (!string.IsNullOrWhiteSpace(filter.DescriptionQuery))
         {
@@ -223,7 +228,19 @@ public class DatabaseService
         }
 
         var where = conditions.Count > 0 ? " WHERE " + string.Join(" AND ", conditions) : "";
-        return (where, parameters);
+
+        var sortCol = filter.SortBy switch
+        {
+            "title" => "Title",
+            "amount" => "ABS(Amount)",
+            "category" => "Category",
+            "type" => "PaymentType",
+            _ => "Date",
+        };
+        var dir = filter.SortDescending ? "DESC" : "ASC";
+        var orderBy = $" ORDER BY {sortCol} {dir}, Id DESC";
+
+        return (where, orderBy, parameters);
     }
 
     public int AddRecord(Record record)
@@ -233,7 +250,7 @@ public class DatabaseService
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-            INSERT INTO Records (Title, Category, Description, Amount, BalanceType, Date, CreatedAt, UpdatedAt)
+            INSERT INTO Records (Title, Category, Description, Amount, PaymentType, Date, CreatedAt, UpdatedAt)
             VALUES ($title, $category, $desc, $amount, $balanceType, $date, $createdAt, $updatedAt);
             SELECT last_insert_rowid();
             """;
@@ -241,7 +258,7 @@ public class DatabaseService
         cmd.Parameters.AddWithValue("$category", record.Category);
         cmd.Parameters.AddWithValue("$desc", record.Description);
         cmd.Parameters.AddWithValue("$amount", (double)record.Amount);
-        cmd.Parameters.AddWithValue("$balanceType", record.BalanceType);
+        cmd.Parameters.AddWithValue("$balanceType", record.PaymentType);
         cmd.Parameters.AddWithValue("$date", record.Date.ToString("yyyy-MM-dd"));
         cmd.Parameters.AddWithValue("$createdAt", now);
         cmd.Parameters.AddWithValue("$updatedAt", now);
@@ -257,7 +274,7 @@ public class DatabaseService
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
             UPDATE Records SET Title=$title, Category=$category, Description=$desc,
-                               Amount=$amount, BalanceType=$balanceType, Date=$date, UpdatedAt=$updatedAt
+                               Amount=$amount, PaymentType=$balanceType, Date=$date, UpdatedAt=$updatedAt
             WHERE Id=$id
             """;
         cmd.Parameters.AddWithValue("$id", record.Id);
@@ -265,7 +282,7 @@ public class DatabaseService
         cmd.Parameters.AddWithValue("$category", record.Category);
         cmd.Parameters.AddWithValue("$desc", record.Description);
         cmd.Parameters.AddWithValue("$amount", (double)record.Amount);
-        cmd.Parameters.AddWithValue("$balanceType", record.BalanceType);
+        cmd.Parameters.AddWithValue("$balanceType", record.PaymentType);
         cmd.Parameters.AddWithValue("$date", record.Date.ToString("yyyy-MM-dd"));
         cmd.Parameters.AddWithValue("$updatedAt", now);
         cmd.ExecuteNonQuery();
@@ -448,6 +465,62 @@ public class DatabaseService
         SeedCategories(conn);
     }
 
+    // --- Test Data ---
+
+    public void SeedTestData(int count = 2000)
+    {
+        using var conn = Open();
+
+        // Check if already seeded
+        using var chk = conn.CreateCommand();
+        chk.CommandText = "SELECT COUNT(*) FROM Records";
+        if (Convert.ToInt32(chk.ExecuteScalar()) >= count) return;
+
+        var categories = new[] { "Salary", "Food", "Transport", "Shopping", "Bills", "Entertainment", "Health", "Education", "Other" };
+        var titles = new[]
+        {
+            "Monthly Salary", "Freelance Payment", "Grocery Store", "Restaurant Dinner",
+            "Bus Fare", "Taxi Ride", "Online Shopping", "Electronics Store",
+            "Electricity Bill", "Water Bill", "Internet Bill", "Phone Bill",
+            "Movie Tickets", "Concert", "Gym Membership", "Doctor Visit",
+            "Pharmacy", "Online Course", "Book Purchase", "Coffee Shop",
+            "Gas Station", "Parking Fee", "Clothing Store", "Gift Purchase",
+            "Insurance Premium", "Rent Payment", "Subscription Service", "Donation",
+            "Bonus", "Investment Return", "Refund", "Side Project Income",
+        };
+
+        var rng = new Random(42);
+        using var txn = conn.BeginTransaction();
+        var now = DateTime.Now;
+
+        for (int i = 0; i < count; i++)
+        {
+            var isIncome = rng.Next(100) < 25; // 25% income
+            var cat = categories[rng.Next(categories.Length)];
+            var title = titles[rng.Next(titles.Length)];
+            var amount = isIncome
+                ? Math.Round((decimal)(rng.NextDouble() * 5000 + 500), 2)
+                : -Math.Round((decimal)(rng.NextDouble() * 200 + 5), 2);
+            var date = now.AddDays(-rng.Next(365 * 2)).ToString("yyyy-MM-dd");
+            var ts = now.ToString("o");
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                INSERT INTO Records (Title, Category, Description, Amount, PaymentType, Date, CreatedAt, UpdatedAt)
+                VALUES ($title, $cat, $desc, $amount, $balanceType, $date, $ts, $ts)
+                """;
+            cmd.Parameters.AddWithValue("$title", title);
+            cmd.Parameters.AddWithValue("$cat", cat);
+            cmd.Parameters.AddWithValue("$desc", $"Test record #{i + 1}");
+            cmd.Parameters.AddWithValue("$amount", (double)amount);
+            cmd.Parameters.AddWithValue("$balanceType", isIncome ? 0 : 1);
+            cmd.Parameters.AddWithValue("$date", date);
+            cmd.Parameters.AddWithValue("$ts", ts);
+            cmd.ExecuteNonQuery();
+        }
+        txn.Commit();
+    }
+
     // --- Helpers ---
 
     private SqliteConnection Open()
@@ -473,7 +546,7 @@ public class DatabaseService
             Category = rdr.GetString(2),
             Description = rdr.GetString(3),
             Amount = (decimal)rdr.GetDouble(4),
-            BalanceType = rdr.GetInt32(5),
+            PaymentType = rdr.GetInt32(5),
             Date = DateTime.Parse(rdr.GetString(6)),
             CreatedAt = DateTime.Parse(rdr.GetString(7)),
             UpdatedAt = DateTime.Parse(rdr.GetString(8)),

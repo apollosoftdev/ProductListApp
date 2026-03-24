@@ -203,10 +203,12 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Row 1: Title, Category, Description -->
+                <!-- Row 1: Title, Category, PaymentType, Description -->
                 <Grid Grid.Row="0" Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="8"/>
@@ -218,15 +220,18 @@
                              TextChanged="FilterText_Changed"/>
 
                     <ComboBox x:Name="FilterCategory" Grid.Column="2"
-                              PlaceholderText="All Categories" Width="160"
+                              PlaceholderText="All Categories" Width="150"
                               SelectionChanged="FilterCategory_Changed"/>
 
-                    <TextBox x:Name="FilterDescription" Grid.Column="4"
+                    <ComboBox x:Name="FilterPaymentType" Grid.Column="4"
+                              Width="130" SelectionChanged="FilterPaymentType_Changed"/>
+
+                    <TextBox x:Name="FilterDescription" Grid.Column="6"
                              PlaceholderText="Search description..."
                              TextChanged="FilterText_Changed"/>
                 </Grid>
 
-                <!-- Row 2: Amount range, Date range, Clear -->
+                <!-- Row 2: Amount range, Date range, Sort, Clear -->
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -238,14 +243,18 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="4"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <NumberBox x:Name="FilterAmountMin" Grid.Column="0"
-                               PlaceholderText="Min amount" Width="130"
+                               PlaceholderText="Min amount" Width="120"
                                SpinButtonPlacementMode="Hidden"
                                ValueChanged="FilterAmount_Changed"/>
                     <NumberBox x:Name="FilterAmountMax" Grid.Column="2"
-                               PlaceholderText="Max amount" Width="130"
+                               PlaceholderText="Max amount" Width="120"
                                SpinButtonPlacementMode="Hidden"
                                ValueChanged="FilterAmount_Changed"/>
 
@@ -256,7 +265,16 @@
                                         PlaceholderText="To date"
                                         DateChanged="FilterDate_Changed"/>
 
-                    <Button x:Name="ClearFiltersButton" Grid.Column="8"
+                    <ComboBox x:Name="FilterSort" Grid.Column="8"
+                              Width="130" SelectionChanged="FilterSort_Changed"/>
+
+                    <Button x:Name="FilterSortDirection" Grid.Column="10"
+                            Click="FilterSortDirection_Click" Padding="6,6"
+                            ToolTipService.ToolTip="Toggle sort direction">
+                        <FontIcon x:Name="FilterSortIcon" Glyph="&#xE74B;" FontSize="12"/>
+                    </Button>
+
+                    <Button x:Name="ClearFiltersButton" Grid.Column="12"
                             Click="ClearFilters_Click"
                             Visibility="Collapsed"
                             ToolTipService.ToolTip="Clear all filters">
@@ -280,14 +298,14 @@
                         </Grid.RowDefinitions>
 
                         <!-- Table Header -->
-                        <Border Grid.Row="0" Padding="20,14"
+                        <Border Grid.Row="0" Padding="8, 14"
                                 Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                 CornerRadius="8,8,0,0"
                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                 BorderThickness="0,0,0,1">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="52"/>   <!-- Thumbnail -->
+                                    <ColumnDefinition Width="100"/>   <!-- Thumbnail -->
                                     <ColumnDefinition Width="110"/>  <!-- Date -->
                                     <ColumnDefinition Width="100"/>  <!-- Type -->
                                     <ColumnDefinition Width="2.5*"/>  <!-- Title -->
@@ -324,11 +342,11 @@
                                   Padding="0" Margin="0">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid Padding="20,10"
+                                    <Grid Padding="8,10"
                                           BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                                           BorderThickness="0,0,0,1">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="52"/>
+                                            <ColumnDefinition Width="100"/>
                                             <ColumnDefinition Width="110"/>
                                             <ColumnDefinition Width="100"/>
                                             <ColumnDefinition Width="2.5*"/>
@@ -354,7 +372,7 @@
                                                    VerticalAlignment="Center"/>
 
                                         <!-- Balance Type -->
-                                        <TextBlock Grid.Column="2" Text="{Binding BalanceTypeDisplay}"
+                                        <TextBlock Grid.Column="2" Text="{Binding PaymentTypeDisplay}"
                                                    FontSize="11" VerticalAlignment="Center"
                                                    Foreground="{Binding Amount, Converter={StaticResource AmountToColor}}"/>
 
@@ -622,9 +640,9 @@
                                                        FontFamily="Cascadia Code,Consolas,Courier New"
                                                        Margin="0,4,0,0"/>
                                         </StackPanel>
-                                        <Border Grid.Column="1" x:Name="DetailBalanceTypeBorder"
+                                        <Border Grid.Column="1" x:Name="DetailPaymentTypeBorder"
                                                 CornerRadius="12" Padding="12,6" VerticalAlignment="Center">
-                                            <TextBlock x:Name="DetailBalanceType" FontSize="12" FontWeight="Medium"
+                                            <TextBlock x:Name="DetailPaymentType" FontSize="12" FontWeight="Medium"
                                                        Foreground="White"/>
                                         </Border>
                                     </Grid>
@@ -764,7 +782,7 @@
 
                                 <!-- Balance Type -->
                                 <StackPanel Spacing="4">
-                                    <TextBlock x:Name="FormBalanceTypeLabel" Text="Balance Type" FontSize="12"
+                                    <TextBlock x:Name="FormPaymentTypeLabel" Text="Balance Type" FontSize="12"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -774,10 +792,10 @@
                                         </Grid.ColumnDefinitions>
                                         <ToggleButton x:Name="FormIncomeToggle" Grid.Column="0"
                                                       Content="Income" HorizontalAlignment="Stretch"
-                                                      IsChecked="True" Click="BalanceType_Click"/>
+                                                      IsChecked="True" Click="PaymentType_Click"/>
                                         <ToggleButton x:Name="FormExpenseToggle" Grid.Column="2"
                                                       Content="Expense" HorizontalAlignment="Stretch"
-                                                      Click="BalanceType_Click"/>
+                                                      Click="PaymentType_Click"/>
                                     </Grid>
                                 </StackPanel>
 

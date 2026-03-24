@@ -7,12 +7,15 @@ public class FilterViewModel : BaseViewModel
 {
     private string _titleQuery = string.Empty;
     private string? _selectedCategory;
+    private int? _selectedPaymentType; // null = all, 0 = Income, 1 = Expense
     private string _descriptionQuery = string.Empty;
     private double _amountMin = double.NaN;
     private double _amountMax = double.NaN;
     private DateTimeOffset? _dateStart;
     private DateTimeOffset? _dateEnd;
     private bool _hasActiveFilters;
+    private string _sortBy = "date";
+    private bool _sortDescending = true;
 
     private readonly DispatcherTimer _debounceTimer;
 
@@ -28,6 +31,12 @@ public class FilterViewModel : BaseViewModel
     {
         get => _selectedCategory;
         set { if (SetProperty(ref _selectedCategory, value)) ApplyFilter(); }
+    }
+
+    public int? SelectedPaymentType
+    {
+        get => _selectedPaymentType;
+        set { if (SetProperty(ref _selectedPaymentType, value)) ApplyFilter(); }
     }
 
     public string DescriptionQuery
@@ -58,6 +67,18 @@ public class FilterViewModel : BaseViewModel
     {
         get => _dateEnd;
         set { if (SetProperty(ref _dateEnd, value)) ApplyFilter(); }
+    }
+
+    public string SortBy
+    {
+        get => _sortBy;
+        set { if (SetProperty(ref _sortBy, value)) ApplyFilter(); }
+    }
+
+    public bool SortDescending
+    {
+        get => _sortDescending;
+        set { if (SetProperty(ref _sortDescending, value)) ApplyFilter(); }
     }
 
     public bool HasActiveFilters
@@ -98,11 +119,14 @@ public class FilterViewModel : BaseViewModel
         {
             TitleQuery = string.IsNullOrWhiteSpace(TitleQuery) ? null : TitleQuery.Trim(),
             CategoryFilter = string.IsNullOrWhiteSpace(SelectedCategory) ? null : SelectedCategory,
+            PaymentTypeFilter = SelectedPaymentType,
             DescriptionQuery = string.IsNullOrWhiteSpace(DescriptionQuery) ? null : DescriptionQuery.Trim(),
             AmountMin = double.IsNaN(AmountMin) ? null : (decimal)AmountMin,
             AmountMax = double.IsNaN(AmountMax) ? null : (decimal)AmountMax,
             DateStart = DateStart?.DateTime,
             DateEnd = DateEnd?.DateTime,
+            SortBy = SortBy,
+            SortDescending = SortDescending,
         };
     }
 
@@ -111,6 +135,7 @@ public class FilterViewModel : BaseViewModel
         _debounceTimer.Stop();
         _titleQuery = string.Empty;
         _selectedCategory = null;
+        _selectedPaymentType = null;
         _descriptionQuery = string.Empty;
         _amountMin = double.NaN;
         _amountMax = double.NaN;
@@ -119,6 +144,7 @@ public class FilterViewModel : BaseViewModel
 
         OnPropertyChanged(nameof(TitleQuery));
         OnPropertyChanged(nameof(SelectedCategory));
+        OnPropertyChanged(nameof(SelectedPaymentType));
         OnPropertyChanged(nameof(DescriptionQuery));
         OnPropertyChanged(nameof(AmountMin));
         OnPropertyChanged(nameof(AmountMax));

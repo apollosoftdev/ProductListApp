@@ -42,7 +42,7 @@ public class RecordFormViewModel : BaseViewModel
         set => SetProperty(ref _amount, value);
     }
 
-    public int BalanceType
+    public int PaymentType
     {
         get => _balanceType;
         set => SetProperty(ref _balanceType, value);
@@ -85,7 +85,7 @@ public class RecordFormViewModel : BaseViewModel
         Category = string.Empty;
         Description = string.Empty;
         Amount = 0;
-        BalanceType = 0; // default Income
+        PaymentType = 0; // default Income
         Date = DateTimeOffset.Now;
         PendingImages.Clear();
     }
@@ -98,7 +98,7 @@ public class RecordFormViewModel : BaseViewModel
         Category = record.Category;
         Description = record.Description;
         Amount = (double)Math.Abs(record.Amount); // always show positive in form
-        BalanceType = record.BalanceType;
+        PaymentType = record.PaymentType;
         Date = new DateTimeOffset(record.Date);
 
         PendingImages.Clear();
@@ -134,7 +134,7 @@ public class RecordFormViewModel : BaseViewModel
         var category = Category.Trim();
 
         // Apply sign based on balance type: Expense = negative
-        if (BalanceType == 1 && amount > 0)
+        if (PaymentType == 1 && amount > 0)
             amount = -amount;
 
         var record = new Record
@@ -143,7 +143,7 @@ public class RecordFormViewModel : BaseViewModel
             Category = category,
             Description = Description?.Trim() ?? string.Empty,
             Amount = amount,
-            BalanceType = BalanceType,
+            PaymentType = PaymentType,
             Date = Date.DateTime,
         };
 

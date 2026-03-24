@@ -135,9 +135,10 @@
   "category.cannot_delete": "无法删除",
   "category.cannot_delete_msg": "无法删除「{0}」——它有 {1} 条记录且没有其他类别。",
 
-  "balance.income": "收入",
-  "balance.expense": "支出",
-  "balance.type_label": "收支类型",
+  "payment.income": "收入",
+  "payment.expense": "支出",
+  "payment.type_label": "收支类型",
+  "payment.all": "所有类型",
 
   "common.ok": "确定",
   "common.cancel": "取消",

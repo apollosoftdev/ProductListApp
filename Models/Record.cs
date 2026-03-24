@@ -91,14 +91,14 @@ public class Record : INotifyPropertyChanged
         }
     }
 
-    public int BalanceType
+    public int PaymentType
     {
         get => _balanceType;
-        set { _balanceType = value; OnPropertyChanged(); OnPropertyChanged(nameof(BalanceTypeDisplay)); OnPropertyChanged(nameof(AmountDisplay)); }
+        set { _balanceType = value; OnPropertyChanged(); OnPropertyChanged(nameof(PaymentTypeDisplay)); OnPropertyChanged(nameof(AmountDisplay)); }
     }
 
-    public bool IsExpense => BalanceType == 1;
-    public string BalanceTypeDisplay => BalanceType == 1 ? "Expense" : "Income";
+    public bool IsExpense => PaymentType == 1;
+    public string PaymentTypeDisplay => PaymentType == 1 ? "Expense" : "Income";
 
     // Computed display properties
     public string AmountDisplay => IsExpense ? $"-${Math.Abs(Amount):N2}" : $"+${Amount:N2}";
