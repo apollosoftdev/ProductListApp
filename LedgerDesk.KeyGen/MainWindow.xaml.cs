@@ -20,7 +20,7 @@ public sealed partial class MainWindow : Window
         var hwnd = WindowNative.GetWindowHandle(this);
         var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
         var appWindow = AppWindow.GetFromWindowId(windowId);
-        appWindow.Resize(new Windows.Graphics.SizeInt32(520, 520));
+        appWindow.Resize(new Windows.Graphics.SizeInt32(520, 800));
     }
 
     private void Generate_Click(object sender, RoutedEventArgs e)
